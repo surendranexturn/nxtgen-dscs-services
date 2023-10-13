@@ -1,4 +1,4 @@
-async function TrasnformToJson(payload) {
+async function TransformToJson(payload) {
   const transformData = payload?.metaData;
   const payloadDataRows = payload?.rows;
   //Added Dynamic Keys Iteration Function
@@ -46,7 +46,7 @@ function TransObjKeysToCamelCase(obj) {
 const EBS_SECRET_MANAGER_KEY_NAME = "ebs_dev";
 
 const JsonConverison = {
-  TrasnformToJson,
+  TransformToJson,
   TransObjKeysToCamelCase,
   EBS_SECRET_MANAGER_KEY_NAME,
 };
