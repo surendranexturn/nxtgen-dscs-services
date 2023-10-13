@@ -17,3 +17,5 @@ const Inventory = {
   LoadTilesBasedOnInventoryOrg,
   ListInventoryOrgs,
 };
+
+module.exports = Inventory;
