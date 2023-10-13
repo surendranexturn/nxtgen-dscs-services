@@ -57,6 +57,11 @@ async function CreateNewUserSession(userid, username) {
   return `BEGIN INSERT INTO XXMB_SESSION_LOG (session_id, user_id, user_name, login_status, creation_date, last_update_date) VALUES ( round(dbms_random.value(100000,999999999)),${userid}, upper('${username}'), 'Y', SYSDATE, SYSDATE); COMMIT; END;`;
 }
 
+/**Added On 14-10-23 12.50 AM */
+async function DeleteArchiveSession(sessionid) {
+  return `BEGIN DELETE from XXMB_SESSION_LOG where session_id = ${sessionid}; COMMIT; END;`;
+}
+
 const Login = {
   LoginUserDetails,
   GetUserId,
@@ -64,6 +69,7 @@ const Login = {
   IsSessionsExists,
   ArchiveUserOldLogin,
   CreateNewUserSession,
+  DeleteArchiveSession,
 };
 
 module.exports = Login;
