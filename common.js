@@ -45,10 +45,34 @@ function TransObjKeysToCamelCase(obj) {
 
 const EBS_SECRET_MANAGER_KEY_NAME = "ebs_dev";
 
+function toCamelCase(obj) {
+  if (obj === null || typeof obj !== "object") {
+    return obj;
+  }
+
+  if (Array.isArray(obj)) {
+    return obj.map((item) => toCamelCase(item));
+  }
+
+  const camelCasedObj = {};
+  for (const key in obj) {
+    if (obj.hasOwnProperty(key)) {
+      const lowerCaseKey = key.toLowerCase();
+      const camelCaseKey = lowerCaseKey.replace(/_([A-Za-z])/g, (_, letter) =>
+        letter.toUpperCase()
+      );
+      camelCasedObj[camelCaseKey] = toCamelCase(obj[key]);
+    }
+  }
+
+  return camelCasedObj;
+}
+
 const JsonConverison = {
   TransformToJson,
   TransObjKeysToCamelCase,
   EBS_SECRET_MANAGER_KEY_NAME,
+  toCamelCase,
 };
 
 module.exports = JsonConverison;
