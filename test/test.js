@@ -2,7 +2,7 @@ const { Pick } = require("nxtgen-dscs-services");
 
 async function searchPick() {
   try {
-    const result = await Pick.PickList("premk", 529);
+    const result = await Pick.Search("premk", "S", "10", 6138);
     console.log("Pick Search Result:", result);
   } catch (error) {
     console.error("Error in Pick Search:", error);
