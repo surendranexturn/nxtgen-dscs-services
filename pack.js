@@ -1,5 +1,4 @@
-const oracledb = require("oracledb");
-let connection;
+const db = require("./db");
 
 /**
  * Show the count of the pack dashboard query
@@ -100,37 +99,28 @@ async function List(inventoryOrgId) {
  * returns as sql query
  */
 async function SearchBySONumber(sonumber, inventoryOrgId, dbConfig) {
-  try {
-    // Attempt to establish a database connection
-    connection = await oracledb.getConnection(dbConfig);
+  const query = `
+    SELECT DISTINCT WDV.SOURCE_HEADER_NUMBER AS ORDER_NUMBER
+    FROM WSH_DELIVERABLES_V WDV
+    WHERE CONTAINER_FLAG = 'N'
+      AND SOURCE_CODE = 'OE'
+      AND WDV.RELEASED_STATUS = 'Y' 
+      AND WDV.SOURCE_HEADER_NUMBER LIKE '%' || :sonumber || '%'
+      AND WDV.ORGANIZATION_ID = :inventoryOrgId`;
 
-    // Execute the SQL query
-    const result = await connection.execute(
-      `
-      SELECT DISTINCT WDV.SOURCE_HEADER_NUMBER AS ORDER_NUMBER
-      FROM WSH_DELIVERABLES_V WDV
-      WHERE CONTAINER_FLAG = 'N'
-        AND SOURCE_CODE = 'OE'
-        AND WDV.RELEASED_STATUS = 'Y' 
-        AND WDV.SOURCE_HEADER_NUMBER LIKE '%' || :sonumber || '%'
-        AND WDV.ORGANIZATION_ID = :inventoryOrgId`,
-      { sonumber, inventoryOrgId }
-    );
-
-    // Release the connection
-    await connection.close();
-
-    // Return the query result
-    return result;
-  } catch (error) {
-    // Handle any errors that occur during the database connection or query execution
-    console.error("Error:", error);
-    // throw error; // You can choose to throw or handle the error as needed
-    return {
-      statusCode: 500,
-      body: JSON.stringify({ error: "Database error" + error }),
-    };
-  }
+  db.executeQuery(query, { sonumber, inventoryOrgId }, dbConfig)
+    .then((results) => {
+      // Handle the results here
+      return results;
+    })
+    .catch((error) => {
+      // Handle errors here
+      console.error("Error:", error.message);
+      return {
+        statusCode: 500,
+        body: JSON.stringify({ error: "Database error" }),
+      };
+    });
 }
 
 /**
@@ -141,36 +131,28 @@ async function SearchBySONumber(sonumber, inventoryOrgId, dbConfig) {
  * @returns sql query
  */
 async function SearchByDeliveryId(deliveryId, inventoryOrgId, dbConfig) {
-  try {
-    // Attempt to establish a database connection
-    connection = await oracledb.getConnection(dbConfig);
-
-    // Execute the SQL query
-    const result = await connection.execute(
-      `
-      SELECT DISTINCT WDV.DELIVERY_ID AS DELIVERY
-      FROM WSH_DELIVERABLES_V WDV
-      WHERE CONTAINER_FLAG = 'N'
-        AND SOURCE_CODE = 'OE'
-        AND WDV.RELEASED_STATUS = 'Y'
-        AND WDV.DELIVERY_ID LIKE '%' || :deliveryId || '%'
-        AND WDV.ORGANIZATION_ID = :inventoryOrgId`,
-      { deliveryId, inventoryOrgId }
-    );
-
-    // Release the connection
-    await connection.close();
-
-    // Return the query result
-    return result;
-  } catch (error) {
-    // Handle any errors that occur during the database connection or query execution
-    console.error("Error:", error);
-    return {
-      statusCode: 500,
-      body: JSON.stringify({ error: "Database error" + error }),
-    };
-  }
+  const query = `
+  SELECT DISTINCT WDV.DELIVERY_ID AS DELIVERY
+  FROM WSH_DELIVERABLES_V WDV
+  WHERE CONTAINER_FLAG = 'N'
+    AND SOURCE_CODE = 'OE'
+    AND WDV.RELEASED_STATUS = 'Y'
+    AND WDV.DELIVERY_ID LIKE '%' || :deliveryId || '%'
+    AND WDV.ORGANIZATION_ID = :inventoryOrgId`;
+  const params = { deliveryId, inventoryOrgId };
+  db.executeQuery(query, params, dbConfig)
+    .then((results) => {
+      // Handle the results here
+      return results;
+    })
+    .catch((error) => {
+      // Handle errors here
+      console.error("Error:", error.message);
+      return {
+        statusCode: 500,
+        body: JSON.stringify({ error: "Database error" }),
+      };
+    });
 }
 
 /**
@@ -184,41 +166,32 @@ async function SearchByDestinationLocator(
   inventoryOrgId,
   dbConfig
 ) {
-  srchSegment = srchSegment ? `'${srchSegment}'` : ":INPUT_VAR3";
-  try {
-    // Attempt to establish a database connection
-    connection = await oracledb.getConnection(dbConfig);
-
-    // Execute the SQL query
-    const result = await connection.execute(
-      `
-      SELECT DISTINCT MIL.SEGMENT1||'.'||MIL.SEGMENT2||'.'||MIL.SEGMENT3||'.0.0.0.0.0.0.0' DESTINATION_LOCATOR
-      FROM MTL_ITEM_LOCATIONS MIL
-      WHERE ORGANIZATION_ID = :inventoryOrgId
-        AND MIL.INVENTORY_ITEM_ID IN
-          (SELECT DISTINCT WDV.INVENTORY_ITEM_ID
-          FROM WSH_DELIVERABLES_V WDV
-          WHERE CONTAINER_FLAG = 'N'
-            AND WDV.SOURCE_CODE = 'OE'
-            AND WDV.RELEASED_STATUS = 'Y'
-            AND MIL.SEGMENT1||MIL.SEGMENT2||MIL.SEGMENT3 like NVL('%'|| :srchSegment || '%',MIL.SEGMENT1||MIL.SEGMENT2||MIL.SEGMENT3)
-            AND WDV.ORGANIZATION_ID = :inventoryOrgId})`,
-      { deliveryId, inventoryOrgId, srchSegment }
-    );
-
-    // Release the connection
-    await connection.close();
-
-    // Return the query result
-    return result;
-  } catch (error) {
-    // Handle any errors that occur during the database connection or query execution
-    console.error("Error:", error);
-    return {
-      statusCode: 500,
-      body: JSON.stringify({ error: "Database error" + error }),
-    };
-  }
+  const query = `
+  SELECT DISTINCT MIL.SEGMENT1||'.'||MIL.SEGMENT2||'.'||MIL.SEGMENT3||'.0.0.0.0.0.0.0' DESTINATION_LOCATOR
+  FROM MTL_ITEM_LOCATIONS MIL
+  WHERE ORGANIZATION_ID = :inventoryOrgId
+    AND MIL.INVENTORY_ITEM_ID IN
+      (SELECT DISTINCT WDV.INVENTORY_ITEM_ID
+      FROM WSH_DELIVERABLES_V WDV
+      WHERE CONTAINER_FLAG = 'N'
+        AND WDV.SOURCE_CODE = 'OE'
+        AND WDV.RELEASED_STATUS = 'Y'
+        AND MIL.SEGMENT1||MIL.SEGMENT2||MIL.SEGMENT3 like NVL('%'|| :srchSegment || '%',MIL.SEGMENT1||MIL.SEGMENT2||MIL.SEGMENT3)
+        AND WDV.ORGANIZATION_ID = :inventoryOrgId})`;
+  const params = { inventoryOrgId, srchSegment };
+  db.executeQuery(query, params, dbConfig)
+    .then((results) => {
+      // Handle the results here
+      return results;
+    })
+    .catch((error) => {
+      // Handle errors here
+      console.error("Error:", error.message);
+      return {
+        statusCode: 500,
+        body: JSON.stringify({ error: "Database error" }),
+      };
+    });
 }
 
 /**
