@@ -5,7 +5,7 @@ async function ExecuteSqlQuery(query, dbConfig) {
   try {
     connection = await oracledb.getConnection(dbConfig);
 
-    const queryResult = await connection.execute(query, params);
+    const queryResult = await connection.execute(query);
 
     return queryResult;
   } catch (error) {

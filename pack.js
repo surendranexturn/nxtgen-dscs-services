@@ -229,12 +229,19 @@ async function SearchByDestinationLocator(
  * @param {*} inventoryOrgId
  * @returns  sql Query
  */
-async function Search(deliveryId, sonumber, srchSegment, inventoryOrgId) {
-  sonumber = sonumber ? sonumber : ":INPUT_VAR";
-  deliveryId = deliveryId ? deliveryId : ":INPUT_VAR1";
-  srchSegment = srchSegment ? `'${srchSegment}'` : ":INPUT_VAR3";
-  return `SELECT DELIVERY_ID,
-                  PROMISE_DATE,
+async function Search(
+  deliveryId,
+  sonumber,
+  srchSegment,
+  inventoryOrgId,
+  dbConfig
+) {
+  try {
+    sonumber = sonumber ? sonumber : ":INPUT_VAR";
+    deliveryId = deliveryId ? deliveryId : ":INPUT_VAR1";
+    srchSegment = srchSegment ? `'${srchSegment}'` : ":INPUT_VAR3";
+    const query = `SELECT DELIVERY_ID,
+                  PROMISE_DATE AS "Date",
                   ORDER_NUMBER,
                   SO_DISPLAY,
                   ITEM_COUNT,
@@ -320,6 +327,11 @@ async function Search(deliveryId, sonumber, srchSegment, inventoryOrgId) {
                   AND FLV.ENABLED_FLAG = 'Y'
                   AND FLV.MEANING = 'ALL'))  
                 ORDER BY SEQ,ROW_NUM`;
+    const results = await Db.ExecuteSqlQuery(query, dbConfig);
+    return results;
+  } catch (error) {
+    return error;
+  }
 }
 
 /**
