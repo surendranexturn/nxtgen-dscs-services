@@ -184,25 +184,24 @@ async function SearchByDestinationLocator(
   inventoryOrgId,
   dbConfig
 ) {
-  srchSegment = srchSegment ? `'${srchSegment}'` : ":INPUT_VAR3";
+  // srchSegment = srchSegment ? `'${srchSegment}'` : null;
   try {
     // Attempt to establish a database connection
     connection = await oracledb.getConnection(dbConfig);
 
     // Execute the SQL query
     const result = await connection.execute(
-      `
-      SELECT DISTINCT MIL.SEGMENT1||'.'||MIL.SEGMENT2||'.'||MIL.SEGMENT3||'.0.0.0.0.0.0.0' DESTINATION_LOCATOR
-      FROM MTL_ITEM_LOCATIONS MIL
-      WHERE ORGANIZATION_ID = :inventoryOrgId
-        AND MIL.INVENTORY_ITEM_ID IN
-          (SELECT DISTINCT WDV.INVENTORY_ITEM_ID
-          FROM WSH_DELIVERABLES_V WDV
-          WHERE CONTAINER_FLAG = 'N'
-            AND WDV.SOURCE_CODE = 'OE'
-            AND WDV.RELEASED_STATUS = 'Y'
-            AND MIL.SEGMENT1||MIL.SEGMENT2||MIL.SEGMENT3 like NVL('%'|| :srchSegment || '%',MIL.SEGMENT1||MIL.SEGMENT2||MIL.SEGMENT3)
-            AND WDV.ORGANIZATION_ID = :inventoryOrgId})`,
+      `SELECT DISTINCT MIL.SEGMENT1||'.'||MIL.SEGMENT2||'.'||MIL.SEGMENT3||'.0.0.0.0.0.0.0' DESTINATION_LOCATOR
+  FROM MTL_ITEM_LOCATIONS MIL
+  WHERE ORGANIZATION_ID = :inventoryOrgId
+    AND MIL.INVENTORY_ITEM_ID IN
+      (SELECT DISTINCT WDV.INVENTORY_ITEM_ID
+       FROM WSH_DELIVERABLES_V WDV
+       WHERE CONTAINER_FLAG = 'N'
+         AND WDV.SOURCE_CODE = 'OE'
+         AND WDV.RELEASED_STATUS = 'Y'
+         AND MIL.SEGMENT1||MIL.SEGMENT2||MIL.SEGMENT3 like NVL('%'|| :srchSegment || '%',MIL.SEGMENT1||MIL.SEGMENT2||MIL.SEGMENT3)
+         AND WDV.ORGANIZATION_ID = :inventoryOrgId)`,
       { inventoryOrgId, srchSegment }
     );
 
