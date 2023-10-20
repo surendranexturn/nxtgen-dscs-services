@@ -237,9 +237,40 @@ async function Search(
   dbConfig
 ) {
   try {
-    sonumber = sonumber ? sonumber : ":INPUT_VAR";
-    deliveryId = deliveryId ? deliveryId : ":INPUT_VAR1";
-    srchSegment = srchSegment ? `'${srchSegment}'` : ":INPUT_VAR3";
+    // sonumber = sonumber || ":INPUT_VAR";//sonumber!="" ? sonumber : ":INPUT_VAR";
+    // deliveryId = deliveryId ? deliveryId : ":INPUT_VAR1";
+    // srchSegment = srchSegment ? `'${srchSegment}'` : ":INPUT_VAR3";
+    console.log("--->>>", sonumber, "-", deliveryId, "-", srchSegment);
+    //     sonumber= sonumber || ':INPUT_VAR';
+    //   deliveryId= deliveryId || ':INPUT_VAR1';
+    // srchSegment = srchSegment ? `'${srchSegment}'` : ":INPUT_VAR3";
+    let append;
+    if (sonumber != "") {
+      append = `AND WDV.SOURCE_HEADER_NUMBER LIKE NVL('%'|| ${sonumber} || '%',WDV.SOURCE_HEADER_NUMBER)`;
+    } else if (deliveryId != "") {
+      append = `AND WDV.DELIVERY_ID LIKE NVL('%'|| ${deliveryId} || '%',WDV.DELIVERY_ID)`;
+    } else if (srchSegment != "") {
+      srchSegment = srchSegment ? `'${srchSegment}'` : "";
+      append = `AND WDV.INVENTORY_ITEM_ID IN (SELECT INVENTORY_ITEM_ID FROM MTL_ITEM_LOCATIONS MIL
+                                            WHERE ORGANIZATION_ID = ${inventoryOrgId}
+                                               AND MIL.INVENTORY_ITEM_ID = WDV.INVENTORY_ITEM_ID
+                                               AND MIL.SEGMENT1||MIL.SEGMENT2||MIL.SEGMENT3 like NVL('%'|| ${srchSegment} || '%',MIL.SEGMENT1||MIL.SEGMENT2||MIL.SEGMENT3))`;
+    }
+    // AND WDV.SOURCE_HEADER_NUMBER LIKE NVL('%'|| ${sonumber} || '%',WDV.SOURCE_HEADER_NUMBER)
+    //                 AND WDV.DELIVERY_ID LIKE NVL('%'|| ${deliveryId} || '%',WDV.DELIVERY_ID)
+    //                 AND WDV.INVENTORY_ITEM_ID IN (SELECT INVENTORY_ITEM_ID FROM MTL_ITEM_LOCATIONS MIL
+    //                                             WHERE ORGANIZATION_ID = ${inventoryOrgId}
+    //                                               AND MIL.INVENTORY_ITEM_ID = WDV.INVENTORY_ITEM_ID
+    //                                               AND MIL.SEGMENT1||MIL.SEGMENT2||MIL.SEGMENT3 like NVL('%'|| ${srchSegment} || '%',MIL.SEGMENT1||MIL.SEGMENT2||MIL.SEGMENT3))
+
+    // AND WDV.SOURCE_HEADER_NUMBER LIKE NVL('%'|| ${sonumber} || '%',WDV.SOURCE_HEADER_NUMBER)
+    // AND WDV.DELIVERY_ID LIKE NVL('%'|| ${deliveryId} || '%',WDV.DELIVERY_ID)
+    // AND WDV.INVENTORY_ITEM_ID IN (SELECT INVENTORY_ITEM_ID FROM MTL_ITEM_LOCATIONS MIL
+    //                             WHERE ORGANIZATION_ID = ${inventoryOrgId}
+    //                               AND MIL.INVENTORY_ITEM_ID = WDV.INVENTORY_ITEM_ID
+    //                               AND MIL.SEGMENT1||MIL.SEGMENT2||MIL.SEGMENT3 like NVL('%'|| ${srchSegment} || '%',MIL.SEGMENT1||MIL.SEGMENT2||MIL.SEGMENT3))
+
+    console.log("--->>>", sonumber, "-", deliveryId, "-", srchSegment);
     const query = `SELECT DELIVERY_ID,
                   PROMISE_DATE AS "Date",
                   ORDER_NUMBER,
@@ -267,12 +298,7 @@ async function Search(
                 AND WDV.CONTAINER_FLAG = 'N'
                 AND WDV.RELEASED_STATUS = 'Y' 
                 AND WDV.ORGANIZATION_ID = ${inventoryOrgId}
-                AND WDV.SOURCE_HEADER_NUMBER LIKE NVL('%'|| ${sonumber} || '%',WDV.SOURCE_HEADER_NUMBER)
-                AND WDV.DELIVERY_ID LIKE NVL('%'|| ${deliveryId} || '%',WDV.DELIVERY_ID)
-                AND WDV.INVENTORY_ITEM_ID IN (SELECT INVENTORY_ITEM_ID FROM MTL_ITEM_LOCATIONS MIL
-                                            WHERE ORGANIZATION_ID = ${inventoryOrgId}
-                                              AND MIL.INVENTORY_ITEM_ID = WDV.INVENTORY_ITEM_ID
-                                              AND MIL.SEGMENT1||MIL.SEGMENT2||MIL.SEGMENT3 like NVL('%'|| ${srchSegment} || '%',MIL.SEGMENT1||MIL.SEGMENT2||MIL.SEGMENT3))
+                ${append}
                 GROUP BY WDV.DELIVERY_ID,
                 WDV.SOURCE_HEADER_NUMBER,
                 WDV.LATEST_PICKUP_DATE,
@@ -297,12 +323,7 @@ async function Search(
                 AND WDV.CONTAINER_FLAG = 'N'
                 AND WDV.RELEASED_STATUS = 'Y' 
                 AND WDV.ORGANIZATION_ID = ${inventoryOrgId}
-                AND WDV.SOURCE_HEADER_NUMBER LIKE NVL('%'|| ${sonumber} || '%',WDV.SOURCE_HEADER_NUMBER)
-                AND WDV.DELIVERY_ID LIKE NVL('%'|| ${deliveryId} || '%',WDV.DELIVERY_ID)
-                AND WDV.INVENTORY_ITEM_ID IN (SELECT INVENTORY_ITEM_ID FROM MTL_ITEM_LOCATIONS MIL
-                                            WHERE ORGANIZATION_ID = ${inventoryOrgId}
-                                              AND MIL.INVENTORY_ITEM_ID = WDV.INVENTORY_ITEM_ID
-                                              AND MIL.SEGMENT1||MIL.SEGMENT2||MIL.SEGMENT3 like NVL('%'|| ${srchSegment} || '%',MIL.SEGMENT1||MIL.SEGMENT2||MIL.SEGMENT3))
+               ${append}
                 AND WDV.DELIVERY_ID NOT IN (SELECT DISTINCT WDV.DELIVERY_ID FROM WSH_DELIVERABLES_V WDV
                                             WHERE WDV.SOURCE_CODE = 'OE'
                                               AND WDV.PARENT_CONTAINER_INSTANCE_ID IS NOT NULL
@@ -327,6 +348,8 @@ async function Search(
                   AND FLV.ENABLED_FLAG = 'Y'
                   AND FLV.MEANING = 'ALL'))  
                 ORDER BY SEQ,ROW_NUM`;
+
+    console.log("----------->>>>", query);
     const results = await Db.ExecuteSqlQuery(query, dbConfig);
     return results;
   } catch (error) {
