@@ -1,3 +1,6 @@
+const oracledb = require("oracledb");
+let connection;
+
 /**
  * Show the count of the pack dashboard query
  * @param {*} inventoryOrgId
@@ -96,14 +99,38 @@ async function List(inventoryOrgId) {
  * @param {*} sonumber
  * returns as sql query
  */
-async function SearchBySONumber(sonumber, inventoryOrgId) {
-  return `SELECT DISTINCT WDV.SOURCE_HEADER_NUMBER  ORDER_NUMBER
-        FROM   WSH_DELIVERABLES_V WDV
-        WHERE  CONTAINER_FLAG = 'N'
-          AND SOURCE_CODE = 'OE'
-          AND WDV.RELEASED_STATUS = 'Y' 
-          AND WDV.SOURCE_HEADER_NUMBER LIKE NVL('%'|| ${sonumber} || '%',WDV.SOURCE_HEADER_NUMBER)
-          AND WDV.ORGANIZATION_ID = ${inventoryOrgId}`;
+async function SearchBySONumber(sonumber, inventoryOrgId, dbConfig) {
+  try {
+    // Attempt to establish a database connection
+    connection = await oracledb.getConnection(dbConfig);
+
+    // Execute the SQL query
+    const result = await connection.execute(
+      `
+      SELECT DISTINCT WDV.SOURCE_HEADER_NUMBER AS ORDER_NUMBER
+      FROM WSH_DELIVERABLES_V WDV
+      WHERE CONTAINER_FLAG = 'N'
+        AND SOURCE_CODE = 'OE'
+        AND WDV.RELEASED_STATUS = 'Y' 
+        AND WDV.SOURCE_HEADER_NUMBER LIKE '%' || :sonumber || '%'
+        AND WDV.ORGANIZATION_ID = :inventoryOrgId`,
+      { sonumber, inventoryOrgId }
+    );
+
+    // Release the connection
+    await connection.close();
+
+    // Return the query result
+    return result;
+  } catch (error) {
+    // Handle any errors that occur during the database connection or query execution
+    console.error("Error:", error);
+    // throw error; // You can choose to throw or handle the error as needed
+    return {
+      statusCode: 500,
+      body: JSON.stringify({ error: "Database error" + error }),
+    };
+  }
 }
 
 /**
@@ -113,14 +140,37 @@ async function SearchBySONumber(sonumber, inventoryOrgId) {
  * @param {*} inventoryOrgId
  * @returns sql query
  */
-async function SearchByDeliveryId(deliveryId, inventoryOrgId) {
-  return `SELECT DISTINCT WDV.DELIVERY_ID  DELIVERY
-          FROM   WSH_DELIVERABLES_V WDV
-        WHERE  CONTAINER_FLAG = 'N'
-          AND WDV.SOURCE_CODE = 'OE'
-          AND WDV.RELEASED_STATUS = 'Y'
-          AND WDV.DELIVERY_ID LIKE NVL('%'|| ${deliveryId} || '%',WDV.DELIVERY_ID)
-          AND WDV.ORGANIZATION_ID = ${inventoryOrgId}`;
+async function SearchByDeliveryId(deliveryId, inventoryOrgId, dbConfig) {
+  try {
+    // Attempt to establish a database connection
+    connection = await oracledb.getConnection(dbConfig);
+
+    // Execute the SQL query
+    const result = await connection.execute(
+      `
+      SELECT DISTINCT WDV.DELIVERY_ID AS DELIVERY
+      FROM WSH_DELIVERABLES_V WDV
+      WHERE CONTAINER_FLAG = 'N'
+        AND SOURCE_CODE = 'OE'
+        AND WDV.RELEASED_STATUS = 'Y'
+        AND WDV.DELIVERY_ID LIKE '%' || :deliveryId || '%'
+        AND WDV.ORGANIZATION_ID = :inventoryOrgId`,
+      { deliveryId, inventoryOrgId }
+    );
+
+    // Release the connection
+    await connection.close();
+
+    // Return the query result
+    return result;
+  } catch (error) {
+    // Handle any errors that occur during the database connection or query execution
+    console.error("Error:", error);
+    return {
+      statusCode: 500,
+      body: JSON.stringify({ error: "Database error" + error }),
+    };
+  }
 }
 
 /**
@@ -129,17 +179,46 @@ async function SearchByDeliveryId(deliveryId, inventoryOrgId) {
  * @param {*} inventoryOrgId
  * @returns sql query
  */
-async function SearchByDestinationLocator(inventoryOrgId) {
-  return `SELECT DISTINCT MIL.SEGMENT1||'.'||MIL.SEGMENT2||'.'||MIL.SEGMENT3||'.0.0.0.0.0.0.0' DESTINATION_LOCATOR
-  FROM MTL_ITEM_LOCATIONS MIL
-  WHERE ORGANIZATION_ID = ${inventoryOrgId}
-    AND MIL.INVENTORY_ITEM_ID IN
-      (SELECT DISTINCT WDV.INVENTORY_ITEM_ID
-       FROM WSH_DELIVERABLES_V WDV
-       WHERE CONTAINER_FLAG = 'N'
-         AND WDV.SOURCE_CODE = 'OE'
-         AND WDV.RELEASED_STATUS = 'Y'
-         AND WDV.ORGANIZATION_ID = ${inventoryOrgId});`;
+async function SearchByDestinationLocator(
+  srchSegment,
+  inventoryOrgId,
+  dbConfig
+) {
+  srchSegment = srchSegment ? `'${srchSegment}'` : ":INPUT_VAR3";
+  try {
+    // Attempt to establish a database connection
+    connection = await oracledb.getConnection(dbConfig);
+
+    // Execute the SQL query
+    const result = await connection.execute(
+      `
+      SELECT DISTINCT MIL.SEGMENT1||'.'||MIL.SEGMENT2||'.'||MIL.SEGMENT3||'.0.0.0.0.0.0.0' DESTINATION_LOCATOR
+      FROM MTL_ITEM_LOCATIONS MIL
+      WHERE ORGANIZATION_ID = :inventoryOrgId
+        AND MIL.INVENTORY_ITEM_ID IN
+          (SELECT DISTINCT WDV.INVENTORY_ITEM_ID
+          FROM WSH_DELIVERABLES_V WDV
+          WHERE CONTAINER_FLAG = 'N'
+            AND WDV.SOURCE_CODE = 'OE'
+            AND WDV.RELEASED_STATUS = 'Y'
+            AND MIL.SEGMENT1||MIL.SEGMENT2||MIL.SEGMENT3 like NVL('%'|| :srchSegment || '%',MIL.SEGMENT1||MIL.SEGMENT2||MIL.SEGMENT3)
+            AND WDV.ORGANIZATION_ID = :inventoryOrgId})`,
+      { deliveryId, inventoryOrgId, srchSegment }
+    );
+
+    // Release the connection
+    await connection.close();
+
+    // Return the query result
+    return result;
+  } catch (error) {
+    // Handle any errors that occur during the database connection or query execution
+    console.error("Error:", error);
+    return {
+      statusCode: 500,
+      body: JSON.stringify({ error: "Database error" + error }),
+    };
+  }
 }
 
 /**
