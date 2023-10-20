@@ -451,6 +451,56 @@ async function Filter(inporcess, packing, inventoryOrgId, dbConfig) {
   }
 }
 
+/**
+ * Created Date 21-10-2023
+ * @param {*} deliveryId
+ * @param {*} inventoryOrgId
+ * @param {*} dbConfig
+ * @returns
+ */
+async function Detail(deliveryId, inventoryOrgId, dbConfig) {
+  try {
+    let query = `
+    SELECT 'DEL#'||WDV.DELIVERY_ID DELIVERY_NUMBER,
+           HZP.PARTY_NAME,
+           MIN(WDV.LATEST_PICKUP_DATE) OVER (ORDER BY NVL(WDV.LATEST_PICKUP_DATE,WDV.DATE_REQUESTED)) PROMISE_DATE,
+           'SO#' ||OOHA.ORDER_NUMBER SALES_ORDER,
+           'Item# '||OOLA.ORDERED_ITEM ITEM_NUMBER,
+           MSIB.DESCRIPTION ITEM_DESCRIPTION,
+           OOLA.ORDERED_QUANTITY||' '||ORDER_QUANTITY_UOM QNTY_TO_BE_PACKED,
+           'SO Line# '||WDV.SOURCE_LINE_NUMBER LINE_NUMBER,
+           SUM( OOLA.ORDERED_QUANTITY) OVER (PARTITION BY WDV.DELIVERY_ID ) TOTAL_ITEM_COUNT,
+           (SELECT HAZARD_CLASS 
+              FROM PO_HAZARD_CLASSES_TL 
+             WHERE HAZARD_CLASS_ID = MSIB.HAZARD_CLASS_ID) HAZARD_CLASS,
+           DECODE(MSIB.SERIAL_NUMBER_CONTROL_CODE,1,'Consumable',2,'Asset',5,'Asset',6,'Asset') ITEM_CATEGORY
+      FROM WSH_DELIVERABLES_V WDV,
+           HZ_PARTIES HZP,
+           HZ_CUST_ACCOUNTS HCA,
+           OE_ORDER_HEADERS_ALL OOHA,
+           OE_ORDER_LINES_ALL OOLA,
+           MTL_SYSTEM_ITEMS_B MSIB
+     WHERE WDV.SOURCE_CODE = 'OE'
+       AND WDV.CONTAINER_FLAG = 'N'
+       AND WDV.RELEASED_STATUS = 'Y'
+       AND OOHA.HEADER_ID = WDV.SOURCE_HEADER_ID
+       AND OOHA.HEADER_ID = OOLA.HEADER_ID
+       AND OOLA.LINE_ID = WDV.SOURCE_LINE_ID
+       AND WDV.CUSTOMER_ID = HCA.CUST_ACCOUNT_ID
+       AND HCA.PARTY_ID = HZP.PARTY_ID
+       AND WDV.ORGANIZATION_ID = ${inventoryOrgId}
+       AND WDV.INVENTORY_ITEM_ID = MSIB.INVENTORY_ITEM_ID
+       AND WDV.ORGANIZATION_ID = MSIB.ORGANIZATION_ID
+       AND WDV.DELIVERY_ID = ${deliveryId}
+     `;
+    const results = await Db.ExecuteSqlQuery(query, dbConfig);
+
+    return results;
+  } catch (error) {
+    return error;
+  }
+}
+
 const Pack = {
   Dashboard,
   List,
@@ -459,5 +509,6 @@ const Pack = {
   SearchByDeliveryId,
   SearchByDestinationLocator,
   Filter,
+  Detail,
 };
 module.exports = Pack;
