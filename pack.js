@@ -329,7 +329,7 @@ async function Search(deliveryId, sonumber, srchSegment, inventoryOrgId) {
  * @param {*} inventoryOrgId
  * @returns  sql query
  */
-async function Filter(inporcess, packing, inventoryOrgId) {
+async function Filter(inporcess, packing, inventoryOrgId, dbConfig) {
   try {
     let query = `SELECT DELIVERY_ID,
                       PROMISE_DATE AS "Date",
