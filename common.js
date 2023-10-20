@@ -54,6 +54,10 @@ function toCamelCase(obj) {
     return obj.map((item) => toCamelCase(item));
   }
 
+  if (obj instanceof Date) {
+    return obj; // Return the date object as is
+  }
+
   const camelCasedObj = {};
   for (const key in obj) {
     if (obj.hasOwnProperty(key)) {
