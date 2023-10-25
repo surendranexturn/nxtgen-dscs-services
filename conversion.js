@@ -31,7 +31,7 @@ function TransObjKeysToCamelCase(obj) {
         letter.toUpperCase()
       );
 
-      if (typeof obj[key] === "object" && obj[key].toISOString) {
+      if (typeof obj[key] === "object" && obj[key] && obj[key].toISOString) {
         // If the value is a Date object, convert it to an ISO string
         camelCasedObj[camelCaseKey] = obj[key].toISOString();
       } else {
@@ -42,8 +42,6 @@ function TransObjKeysToCamelCase(obj) {
 
   return camelCasedObj;
 }
-
-const EBS_SECRET_MANAGER_KEY_NAME = "ebs_dev";
 
 function toCamelCase(obj) {
   if (obj === null || typeof obj !== "object") {
@@ -72,11 +70,26 @@ function toCamelCase(obj) {
   return camelCasedObj;
 }
 
+function transformArrayToKey(inputArray) {
+  if (Array.isArray(inputArray) && inputArray.length > 0) {
+    // Get the first key in the first object
+    const firstObject = inputArray[0];
+    const key = Object.keys(firstObject)[0];
+
+    // Create the output object
+    const output = {};
+    output[key] = inputArray.map((entry) => entry[key]);
+    return output;
+  } else {
+    return {};
+  }
+}
+
 const JsonConverison = {
   TransformToJson,
   TransObjKeysToCamelCase,
-  EBS_SECRET_MANAGER_KEY_NAME,
   toCamelCase,
+  transformArrayToKey
 };
 
 module.exports = JsonConverison;

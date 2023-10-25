@@ -2,9 +2,7 @@ const axios = require("axios");
 
 async function getSecret(secretName) {
   // Set the headers
-  const url = `http://localhost:2773/secretsmanager/get?secretId=${encodeURIComponent(
-    secretName
-  )}`;
+  const url = `http://localhost:2773/secretsmanager/get?secretId=${encodeURIComponent(secretName)}`;
 
   // Set the headers
   const headers = {
@@ -13,18 +11,22 @@ async function getSecret(secretName) {
   };
 
   try {
-    const response = await axios.get(url, { headers });
-    const dbConObj = JSON.parse(response?.data?.SecretString);
 
-    // // Handle the response here
-    // console.log("Response Team---->>>:", JSON.parse(response?.data?.SecretString));
+    let dbConObj;
+    let isLocal = false;
 
-    // const dbConObj = {
-    //   user: dbInfo?.apps_usr,
-    //   password: dbInfo?.apps_pwd,
-    //   connectString: dbInfo?.host + ":" + dbInfo?.port + "/" + dbInfo?.dbname,
-    // };
-    // console.log("-->>> Db Config", dbConObj);
+    if (!isLocal) {
+      const response = await axios.get(url, { headers });
+      dbConObj = JSON.parse(response?.data?.SecretString);
+    } else {
+      dbConObj = {
+        apps_usr: "apps",
+        apps_pwd: "devapps",
+        host:"ec2-52-2-62-212.compute-1.amazonaws.com",
+        port:"1521",
+        dbname:"ebs_DEV"
+      };
+    }
 
     return dbConObj;
   } catch (error) {
