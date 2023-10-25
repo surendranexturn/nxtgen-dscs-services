@@ -1,0 +1,16 @@
+{
+  "name": "nxtgen-dscs-services",
+  "version": "1.0.15",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "axios": "^1.5.1",
+    "oracledb": "^5.5.0"
+  }
+}
