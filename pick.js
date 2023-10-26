@@ -119,6 +119,7 @@ async function PickList(username, inventoryOrgId) {
  * @param {*} inventoryOrgId
  * @returns
  */
+
 async function Search(username, searchLookupType, searchValue, inventoryOrgId) {
   let appendQuery;
   if (searchLookupType === "D") {
@@ -127,104 +128,110 @@ async function Search(username, searchLookupType, searchValue, inventoryOrgId) {
     appendQuery = `AND WDV.SOURCE_HEADER_NUMBER LIKE NVL('%'|| ${searchValue} || '%',WDV.SOURCE_HEADER_NUMBER)`;
   } else if (searchLookupType === "I") {
     appendQuery = `AND WDV.ITEM_DESCRIPTION LIKE NVL('%'|| ${searchValue} || '%',WDV.ITEM_DESCRIPTION)`;
+  } else if (searchLookupType === "DT") {
+    appendQuery = `AND OOHA.ATTRIBUTE3 LIKE NVL('%'|| ${searchValue} || '%',OOHA.ATTRIBUTE3)`;
   }
 
   return `SELECT DELIVERY,
-                                  PICKED_BY,
-                                  PROMISE_DATE,
-                                  ORDER_NUMBER,
-                                  DATE_SCHEDULED,
-                                  ITEM_COUNT,
-                                  SO_DISPLAY,
-                                  DEMAND_TYPE,
-                                  ITEM_CATEGORY,
-                                  CUSTOMER_NAME,
-                                  COUNT(*) OVER () TOTAL_ROWCOUNT,
-                                  SEQ,ROW_NUM
-                                FROM
-                                (SELECT WDV.DELIVERY_ID              DELIVERY,
-                                  WND.ATTRIBUTE11  PICKED_BY,
-                                1 SEQ,
-                                  WDV.LATEST_PICKUP_DATE       PROMISE_DATE,			
-                                  WDV.SOURCE_HEADER_NUMBER     ORDER_NUMBER,
-                                  CASE 
-                                  WHEN COUNT(DISTINCT WDV.SOURCE_HEADER_NUMBER) OVER (PARTITION BY WDV.DELIVERY_ID ) > 1 THEN
-                                      'SO# Multiple'
-                                  WHEN COUNT(DISTINCT WDV.SOURCE_HEADER_NUMBER) OVER (PARTITION BY WDV.DELIVERY_ID ) = 1 THEN
-                                      'SO# '||WDV.SOURCE_HEADER_NUMBER
-                                  END SO_DISPLAY,
-                                  XX_DEMAND_TYPE_CATEGORY_FUNC('DEMAND',WDV.DELIVERY_ID,${inventoryOrgId}) DEMAND_TYPE,
-                                XX_DEMAND_TYPE_CATEGORY_FUNC('CATEGORY',WDV.DELIVERY_ID,${inventoryOrgId}) ITEM_CATEGORY,
-                                (SELECT UPPER(SUBSTR(HZP.PARTY_NAME,1,4)) FROM HZ_PARTIES HZP, HZ_CUST_ACCOUNTS HCA
-                                  WHERE HCA.PARTY_ID = HZP.PARTY_ID
-                                    AND HCA.CUST_ACCOUNT_ID = WDV.CUSTOMER_ID) CUSTOMER_NAME,
-                                  DATE_SCHEDULED,
-                                  COUNT(WDV.SOURCE_LINE_ID) ITEM_COUNT,
-                                  ROW_NUMBER() OVER(ORDER BY NVL(WDV.DATE_REQUESTED,WDV.DATE_SCHEDULED)) ROW_NUM,
-                                  WDV.CUSTOMER_ID
-                                FROM   WSH_DELIVERABLES_V WDV, WSH_NEW_DELIVERIES WND
-                                WHERE  WND.DELIVERY_ID=WDV.DELIVERY_ID
-                                ${appendQuery}
-                                  AND CONTAINER_FLAG = 'N'
-                                  AND SOURCE_CODE = 'OE'
-                                  AND RELEASED_STATUS = 'S'
-                                  AND WND.ATTRIBUTE11 = upper('${username}')
-                                  AND WDV.ORGANIZATION_ID = ${inventoryOrgId}		   
-                                GROUP  BY WDV.DELIVERY_ID,
-                                    WND.ATTRIBUTE11,
-                                    WDV.LATEST_PICKUP_DATE,
-                                    SOURCE_HEADER_NUMBER,
-                                    DATE_REQUESTED,
-                                    DATE_SCHEDULED,WDV.CUSTOMER_ID
-                                UNION
-                                SELECT WDV.DELIVERY_ID              DELIVERY,
-                                  CASE WHEN WND.ATTRIBUTE11 IS NULL THEN 'Ready to be picked'  ELSE  WND.ATTRIBUTE11 END    PICKED_BY,
-                                CASE WHEN WND.ATTRIBUTE11 <> upper('${username}') THEN 3
-                                      ELSE 2 END SEQ,
-                                  WDV.LATEST_PICKUP_DATE       PROMISE_DATE,			
-                                  WDV.SOURCE_HEADER_NUMBER     ORDER_NUMBER,
-                                  CASE 
-                                  WHEN COUNT(DISTINCT WDV.SOURCE_HEADER_NUMBER) OVER (PARTITION BY WDV.DELIVERY_ID ) > 1 THEN
-                                      'SO# Multiple'
-                                  WHEN COUNT(DISTINCT WDV.SOURCE_HEADER_NUMBER) OVER (PARTITION BY WDV.DELIVERY_ID ) = 1 THEN
-                                      'SO# '||WDV.SOURCE_HEADER_NUMBER
-                                  END SO_DISPLAY,
-                                  XX_DEMAND_TYPE_CATEGORY_FUNC('DEMAND',WDV.DELIVERY_ID,${inventoryOrgId}) DEMAND_TYPE,
-                                XX_DEMAND_TYPE_CATEGORY_FUNC('CATEGORY',WDV.DELIVERY_ID,${inventoryOrgId}) ITEM_CATEGORY,
-                                (SELECT UPPER(SUBSTR(HZP.PARTY_NAME,1,4)) FROM HZ_PARTIES HZP, HZ_CUST_ACCOUNTS HCA
-                                  WHERE HCA.PARTY_ID = HZP.PARTY_ID
-                                    AND HCA.CUST_ACCOUNT_ID = WDV.CUSTOMER_ID) CUSTOMER_NAME,
-                                  DATE_SCHEDULED,
-                                  COUNT(WDV.SOURCE_LINE_ID) ITEM_COUNT,
-                                  ROW_NUMBER() OVER(ORDER BY NVL(WDV.DATE_REQUESTED,WDV.DATE_SCHEDULED)) ROW_NUM,
-                                  WDV.CUSTOMER_ID
-                                FROM   WSH_DELIVERABLES_V WDV, WSH_NEW_DELIVERIES WND
-                                WHERE  WND.DELIVERY_ID=WDV.DELIVERY_ID
-                                ${appendQuery}
-                                  AND CONTAINER_FLAG = 'N'
-                                  AND SOURCE_CODE = 'OE'
-                                  AND RELEASED_STATUS = 'S' 
-                                  AND (WND.ATTRIBUTE11 <> upper('${username}') OR WND.ATTRIBUTE11 IS NULL)
-                                  AND WDV.ORGANIZATION_ID = ${inventoryOrgId}	
-                                  AND ROWNUM BETWEEN 0 AND NVL((SELECT ATTRIBUTE1
-                                FROM FND_LOOKUP_VALUES_VL FLV,
-                                      XXMB_INV_ORG_V XX
-                                WHERE FLV.LOOKUP_TYPE = 'XXMB_OUTBOUND_TILES_RECORDS' 
-                                  AND FLV.ENABLED_FLAG = 'Y'
-                                  AND FLV.LOOKUP_CODE = XX.INV_ORG_CODE
-                                  AND SUBSTR(XX.INVENTORY_ORGANIZATION_NAME,1,3) = 'RAD'
-                                  AND XX.INV_ORG_ID = ${inventoryOrgId}),(SELECT ATTRIBUTE1
-                                FROM FND_LOOKUP_VALUES_VL FLV
-                                WHERE FLV.LOOKUP_TYPE = 'XXMB_OUTBOUND_TILES_RECORDS' 
-                                  AND FLV.ENABLED_FLAG = 'Y'
-                                  AND FLV.MEANING = 'ALL'))
-                                GROUP  BY WDV.DELIVERY_ID,
-                                    WND.ATTRIBUTE11,
-                                    WDV.LATEST_PICKUP_DATE,
-                                    SOURCE_HEADER_NUMBER,
-                                    DATE_REQUESTED,
-                                    DATE_SCHEDULED,WDV.CUSTOMER_ID)
-                                ORDER BY SEQ,ROW_NUM`;
+       PICKED_BY,
+       PROMISE_DATE,
+       ORDER_NUMBER,
+       DATE_SCHEDULED,
+       ITEM_COUNT,
+       SO_DISPLAY,
+       DEMAND_TYPE,
+       ITEM_CATEGORY,
+       CUSTOMER_NAME,
+       COUNT(*) OVER () TOTAL_ROWCOUNT,
+       SEQ,ROW_NUM
+FROM
+(SELECT WDV.DELIVERY_ID              DELIVERY,
+        WND.ATTRIBUTE11  PICKED_BY,
+	    1 SEQ,
+       WDV.LATEST_PICKUP_DATE       PROMISE_DATE,			
+       WDV.SOURCE_HEADER_NUMBER     ORDER_NUMBER,
+       CASE 
+       WHEN COUNT(DISTINCT WDV.SOURCE_HEADER_NUMBER) OVER (PARTITION BY WDV.DELIVERY_ID ) > 1 THEN
+            'SO# Multiple'
+       WHEN COUNT(DISTINCT WDV.SOURCE_HEADER_NUMBER) OVER (PARTITION BY WDV.DELIVERY_ID ) = 1 THEN
+            'SO# '||WDV.SOURCE_HEADER_NUMBER
+       END SO_DISPLAY,
+       XX_DEMAND_TYPE_CATEGORY_FUNC('DEMAND',WDV.DELIVERY_ID,${inventoryOrgId}) DEMAND_TYPE,
+      XX_DEMAND_TYPE_CATEGORY_FUNC('CATEGORY',WDV.DELIVERY_ID,${inventoryOrgId}) ITEM_CATEGORY,
+      (SELECT UPPER(SUBSTR(HZP.PARTY_NAME,1,4)) FROM HZ_PARTIES HZP, HZ_CUST_ACCOUNTS HCA
+       WHERE HCA.PARTY_ID = HZP.PARTY_ID
+         AND HCA.CUST_ACCOUNT_ID = WDV.CUSTOMER_ID) CUSTOMER_NAME,
+       DATE_SCHEDULED,
+       COUNT(WDV.SOURCE_LINE_ID) ITEM_COUNT,
+       ROW_NUMBER() OVER(ORDER BY NVL(WDV.DATE_REQUESTED,WDV.DATE_SCHEDULED)) ROW_NUM,
+        WDV.CUSTOMER_ID
+FROM   WSH_DELIVERABLES_V WDV, WSH_NEW_DELIVERIES WND,
+       OE_ORDER_HEADERS_ALL OOHA
+WHERE  WND.DELIVERY_ID=WDV.DELIVERY_ID
+       AND WDV.SOURCE_HEADER_NUMBER = OOHA.ORDER_NUMBER
+       ${appendQuery}
+       AND CONTAINER_FLAG = 'N'
+       AND SOURCE_CODE = 'OE'
+       AND RELEASED_STATUS = 'S'
+       AND WND.ATTRIBUTE11 = upper('${username}')
+       AND WDV.ORGANIZATION_ID = ${inventoryOrgId}		   
+GROUP  BY WDV.DELIVERY_ID,
+          WND.ATTRIBUTE11,
+          WDV.LATEST_PICKUP_DATE,
+          SOURCE_HEADER_NUMBER,
+          DATE_REQUESTED,
+          DATE_SCHEDULED,WDV.CUSTOMER_ID
+UNION
+SELECT WDV.DELIVERY_ID              DELIVERY,
+       CASE WHEN WND.ATTRIBUTE11 IS NULL THEN 'Read to be picked'  ELSE  WND.ATTRIBUTE11 END    PICKED_BY,
+	   CASE WHEN WND.ATTRIBUTE11 <> upper('${username}') THEN 3
+            ELSE 2 END SEQ,
+       WDV.LATEST_PICKUP_DATE       PROMISE_DATE,			
+       WDV.SOURCE_HEADER_NUMBER     ORDER_NUMBER,
+       CASE 
+       WHEN COUNT(DISTINCT WDV.SOURCE_HEADER_NUMBER) OVER (PARTITION BY WDV.DELIVERY_ID ) > 1 THEN
+            'SO# Multiple'
+       WHEN COUNT(DISTINCT WDV.SOURCE_HEADER_NUMBER) OVER (PARTITION BY WDV.DELIVERY_ID ) = 1 THEN
+            'SO# '||WDV.SOURCE_HEADER_NUMBER
+       END SO_DISPLAY,
+       XX_DEMAND_TYPE_CATEGORY_FUNC('DEMAND',WDV.DELIVERY_ID,${inventoryOrgId}) DEMAND_TYPE,
+      XX_DEMAND_TYPE_CATEGORY_FUNC('CATEGORY',WDV.DELIVERY_ID,${inventoryOrgId}) ITEM_CATEGORY,
+      (SELECT UPPER(SUBSTR(HZP.PARTY_NAME,1,4)) FROM HZ_PARTIES HZP, HZ_CUST_ACCOUNTS HCA
+       WHERE HCA.PARTY_ID = HZP.PARTY_ID
+         AND HCA.CUST_ACCOUNT_ID = WDV.CUSTOMER_ID) CUSTOMER_NAME,
+       DATE_SCHEDULED,
+       COUNT(WDV.SOURCE_LINE_ID) ITEM_COUNT,
+       ROW_NUMBER() OVER(ORDER BY NVL(WDV.DATE_REQUESTED,WDV.DATE_SCHEDULED)) ROW_NUM,
+        WDV.CUSTOMER_ID
+FROM   WSH_DELIVERABLES_V WDV, WSH_NEW_DELIVERIES WND,
+       OE_ORDER_HEADERS_ALL OOHA
+WHERE  WND.DELIVERY_ID=WDV.DELIVERY_ID
+       AND WDV.SOURCE_HEADER_NUMBER = OOHA.ORDER_NUMBER
+       ${appendQuery}
+       AND CONTAINER_FLAG = 'N'
+       AND SOURCE_CODE = 'OE'
+       AND RELEASED_STATUS = 'S' 
+       AND (WND.ATTRIBUTE11 <> upper('${username}') OR WND.ATTRIBUTE11 IS NULL)
+       AND WDV.ORGANIZATION_ID = ${inventoryOrgId}	
+       AND ROWNUM BETWEEN 0 AND NVL((SELECT ATTRIBUTE1
+      FROM FND_LOOKUP_VALUES_VL FLV,
+           XXMB_INV_ORG_V XX
+      WHERE FLV.LOOKUP_TYPE = 'XXMB_OUTBOUND_TILES_RECORDS' 
+        AND FLV.ENABLED_FLAG = 'Y'
+        AND FLV.LOOKUP_CODE = XX.INV_ORG_CODE
+        AND SUBSTR(XX.INVENTORY_ORGANIZATION_NAME,1,3) = 'RAD'
+        AND XX.INV_ORG_ID = ${inventoryOrgId}),(SELECT ATTRIBUTE1
+      FROM FND_LOOKUP_VALUES_VL FLV
+      WHERE FLV.LOOKUP_TYPE = 'XXMB_OUTBOUND_TILES_RECORDS' 
+        AND FLV.ENABLED_FLAG = 'Y'
+        AND FLV.MEANING = 'ALL'))
+GROUP  BY WDV.DELIVERY_ID,
+          WND.ATTRIBUTE11,
+          WDV.LATEST_PICKUP_DATE,
+          SOURCE_HEADER_NUMBER,
+          DATE_REQUESTED,
+          DATE_SCHEDULED,WDV.CUSTOMER_ID)
+ORDER BY SEQ,ROW_NUM`;
 }
 
 /**
@@ -395,6 +402,14 @@ async function SearchByItemDescription(itemDescription, inventoryOrgId) {
 async function SearchByDeliveryId(deliveryId, inventoryOrgId) {
   return `SELECT DISTINCT WDV.DELIVERY_ID DELIVERY FROM WSH_DELIVERABLES_V WDV WHERE CONTAINER_FLAG = 'N' AND SOURCE_CODE = 'OE' AND RELEASED_STATUS = 'S' AND WDV.DELIVERY_ID LIKE NVL('%'|| ${deliveryId} || '%',WDV.DELIVERY_ID) AND WDV.ORGANIZATION_ID = ${inventoryOrgId}`;
 }
+async function SearchByDemandType(demandType) {
+  return `SELECT MEANING FROM FND_LOOKUP_VALUES
+WHERE LOOKUP_TYPE ='DEMAND_CLASS'
+AND ENABLED_FLAG ='Y'
+AND MEANING LIKE NVL('%'|| ${demandType} || '%',MEANING)
+AND SYSDATE BETWEEN NVL(START_DATE_ACTIVE,SYSDATE-1) AND NVL(END_DATE_ACTIVE,SYSDATE+1)
+ORDER BY 1`;
+}
 
 const Pick = {
   PickList,
@@ -403,6 +418,7 @@ const Pick = {
   SearchBySalesOrder,
   SearchByItemDescription,
   SearchByDeliveryId,
+  SearchByDemandType,
 };
 
 module.exports = Pick;
