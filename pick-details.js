@@ -146,15 +146,14 @@ async function DestinationSubInventoryDetails(
  * @returns
  */
 async function PalleteLOV(
-  inventoryOrgId,
-  subinventory,
+  inventoryOrgCode,
   palletVal,
   source = Utils.DB_SOURCES.EBS
 ) {
   try {
     return Db.ExecuteSqlQuery(
       source,
-      PickDetailsQueries.PalleteLOV(inventoryOrgId, subinventory, palletVal)
+      PickDetailsQueries.PalleteLOV(inventoryOrgCode, palletVal)
     );
   } catch (error) {
     console.error("Error:", error);
@@ -175,8 +174,7 @@ async function PalleteLOV(
  * @returns
  */
 async function CageLOV(
-  inventoryOrgId,
-  subinventory,
+  inventoryOrgCode,
   palletVal,
   cageVal,
   source = Utils.DB_SOURCES.EBS
@@ -184,12 +182,7 @@ async function CageLOV(
   try {
     return Db.ExecuteSqlQuery(
       source,
-      PickDetailsQueries.CageLOV(
-        inventoryOrgId,
-        subinventory,
-        palletVal,
-        cageVal
-      )
+      PickDetailsQueries.CageLOV(inventoryOrgCode, palletVal, cageVal)
     );
   } catch (error) {
     console.error("Error:", error);
@@ -211,8 +204,7 @@ async function CageLOV(
  * @returns
  */
 async function ToteLOV(
-  inventoryOrgId,
-  subinventory,
+  inventoryOrgCode,
   palletVal,
   cageVal,
   toteVal,
@@ -221,13 +213,7 @@ async function ToteLOV(
   try {
     return Db.ExecuteSqlQuery(
       source,
-      PickDetailsQueries.ToteLOV(
-        inventoryOrgId,
-        subinventory,
-        palletVal,
-        cageVal,
-        toteVal
-      )
+      PickDetailsQueries.ToteLOV(inventoryOrgCode, palletVal, cageVal, toteVal)
     );
   } catch (error) {
     console.error("Error:", error);
