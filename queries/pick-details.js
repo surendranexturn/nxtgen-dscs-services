@@ -51,11 +51,11 @@ const DestinationSubInventoryDetails = (inventoryOrgId) => {
  */
 const PalleteLOV = (inventoryOrgId, subinventory, palletVal) => {
   return `
-    SELECT DISTINCT SEGMENT1 PALLET
-      FROM MTL_ITEM_LOCATIONS
-     WHERE ORGANIZATION_ID = ${inventoryOrgId}
-       AND UPPER(SUBINVENTORY_CODE) = UPPER('${subinventory}')
-       AND SEGMENT1 LIKE NVL('%'|| ${palletVal} || '%',SEGMENT1);`;
+  SELECT DISTINCT SEGMENT1 PALLET
+  FROM MTL_ITEM_LOCATIONS
+ WHERE ORGANIZATION_ID = ${inventoryOrgId}
+   AND UPPER(SUBINVENTORY_CODE) = UPPER('${subinventory}')
+   AND SEGMENT1 LIKE NVL('%'|| ${palletVal} || '%',SEGMENT1)`;
 };
 
 /**
