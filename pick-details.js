@@ -238,6 +238,25 @@ async function ToteLOV(
   }
 }
 
+async function GetLinesCountBasedOnSO(
+  inventoryOrgId,
+  soNumber,
+  source = Utils.DB_SOURCES.EBS
+) {
+  try {
+    return Db.ExecuteSqlQuery(
+      source,
+      PickDetailsQueries.GetLinesCountBasedOnSO(inventoryOrgId, soNumber)
+    );
+  } catch (error) {
+    console.error("Error:", error);
+    return {
+      statusCode: 500,
+      body: JSON.stringify({ error: "Database error" + error }),
+    };
+  }
+}
+
 const PickDetails = {
   CountBasedonDeliveryId,
   DeliveryDetails,
@@ -247,5 +266,6 @@ const PickDetails = {
   PalleteLOV,
   CageLOV,
   ToteLOV,
+  GetLinesCountBasedOnSO,
 };
 module.exports = PickDetails;

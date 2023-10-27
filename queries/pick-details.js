@@ -85,10 +85,16 @@ const ToteLOV = (inventoryOrgId, subinventory, palletVal, cageVal, toteVal) => {
      AND SEGMENT3 LIKE NVL('%'|| ${toteVal} || '%',SEGMENT3)`;
 };
 
+const GetLinesCountBasedOnSO = (inventoryOrgId, soNumber) => {
+  return `select count(SOURCE_Line_NUMBER) Lines,sum(REQUESTED_QUANTITY) UNITS
+    from   WSH_DELIVERABLES_V    where SOURCE_HEADER_NUMBER = ${soNumber} and organization_id = ${inventoryOrgId}`;
+};
+
 module.exports = {
   SourceSubInventoryDetails,
   DestinationSubInventoryDetails,
   PalleteLOV,
   CageLOV,
   ToteLOV,
+  GetLinesCountBasedOnSO,
 };
