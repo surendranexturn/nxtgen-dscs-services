@@ -238,6 +238,13 @@ async function ToteLOV(
   }
 }
 
+/**
+ *
+ * @param {*} inventoryOrgId
+ * @param {*} soNumber
+ * @param {*} source
+ * @returns
+ */
 async function GetLinesCountBasedOnSO(
   inventoryOrgId,
   soNumber,
@@ -247,6 +254,32 @@ async function GetLinesCountBasedOnSO(
     return Db.ExecuteSqlQuery(
       source,
       PickDetailsQueries.GetLinesCountBasedOnSO(inventoryOrgId, soNumber)
+    );
+  } catch (error) {
+    console.error("Error:", error);
+    return {
+      statusCode: 500,
+      body: JSON.stringify({ error: "Database error" + error }),
+    };
+  }
+}
+
+/**
+ *
+ * @param {*} inventoryOrgId
+ * @param {*} soNumber
+ * @param {*} source
+ * @returns
+ */
+async function GetSoLinesDetails(
+  inventoryOrgId,
+  soNumber,
+  source = Utils.DB_SOURCES.EBS
+) {
+  try {
+    return Db.ExecuteSqlQuery(
+      source,
+      PickDetailsQueries.GetSoLinesDetails(inventoryOrgId, soNumber)
     );
   } catch (error) {
     console.error("Error:", error);
@@ -267,5 +300,6 @@ const PickDetails = {
   CageLOV,
   ToteLOV,
   GetLinesCountBasedOnSO,
+  GetSoLinesDetails,
 };
 module.exports = PickDetails;
