@@ -3,7 +3,7 @@ const Secrets = require("./secrets");
 const JsonConverison = require("./conversion");
 const Utils = require("./utils");
 
-async function ExecuteSqlQuery(source, query, variables = {}) {
+async function ExecuteSqlQuery(source, query, variables = {}, skipTransform = false) {
   let connection;
   let result;
 
@@ -31,8 +31,10 @@ async function ExecuteSqlQuery(source, query, variables = {}) {
         break;
     }
 
-    result= await JsonConverison.TransformToJson(result);
-    result= await JsonConverison.TransObjKeysToCamelCase(result);
+    if (!skipTransform) {
+      result = await JsonConverison.TransformToJson(result);
+      result = await JsonConverison.TransObjKeysToCamelCase(result);
+    }
     return result;
 
   } catch (error) {

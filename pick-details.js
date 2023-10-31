@@ -276,6 +276,34 @@ async function GetSoLinesDetails(
   }
 }
 
+/**
+ *
+ * @param {*} inventoryOrgId
+ * @param {*} deliveryId
+ * @returns
+ */
+async function UpdateAutoPopulateFullPickQty(
+  inventoryOrgId,
+  deliveryId,
+  source = Utils.DB_SOURCES.EBS
+) {
+  try {
+    return Db.ExecuteSqlQuery(
+      source,
+      PickDetailsQueries.UpdateAutoPopulateFullPickQty(inventoryOrgId, deliveryId),
+      {},
+      true
+    );
+  } catch (error) {
+    console.error("Error:", error);
+    return {
+      statusCode: 500,
+      body: JSON.stringify({ error: "Database error" + error }),
+    };
+  }
+}
+
+
 const PickDetails = {
   CountBasedonDeliveryId,
   DeliveryDetails,
@@ -287,5 +315,6 @@ const PickDetails = {
   ToteLOV,
   GetLinesCountBasedOnSO,
   GetSoLinesDetails,
+  UpdateAutoPopulateFullPickQty
 };
 module.exports = PickDetails;

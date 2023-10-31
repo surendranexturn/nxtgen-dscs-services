@@ -118,6 +118,46 @@ const GetSoLinesDetails = (inventoryOrgId, soNumber) => {
               ORDER BY SOURCE_LINE_NUMBER`;
 };
 
+/**
+ * @param {*} inventoryOrgId
+ * @param {*} deliveryId
+ * @returns
+ */
+const UpdateAutoPopulateFullPickQty = (inventoryOrgId, deliveryId) => {
+  return `
+  update
+      mtl_material_transactions_temp
+set
+      TRANSACTION_QUANTITY = (
+            select
+                  quantity
+            from
+                  MTL_TXN_REQUEST_LINES_V
+            where
+                  line_id = move_order_line_id
+      )
+where
+      organization_id = ${inventoryOrgId}
+      AND move_order_line_id in (
+            select
+                  line_id
+            from
+                  MTL_TXN_REQUEST_LINES_V mv,
+                  WSH_DELIVERABLES_V wv
+            WHERE
+                  mv.organization_id = wv.organization_id
+                  AND TXN_SOURCE_LINE_DETAIL_ID = DELIVERY_LINE_ID
+                  AND mv.organization_id = ${inventoryOrgId}
+                  AND wv.delivery_id = ${deliveryId}
+                  AND -1 = -1
+                  AND (
+                        mv.move_order_type = 3
+                        AND mv.line_status IN (3, 7, 9)
+                  )
+      )
+  `
+}
+
 module.exports = {
   SourceSubInventoryDetails,
   DestinationSubInventoryDetails,
@@ -126,4 +166,5 @@ module.exports = {
   ToteLOV,
   GetLinesCountBasedOnSO,
   GetSoLinesDetails,
+  UpdateAutoPopulateFullPickQty
 };
