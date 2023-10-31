@@ -38,7 +38,7 @@ async function CountBasedonDeliveryId(deliveryId, inventoryOrgId) {
 async function DeliveryDetails(deliveryId, inventoryOrgId) {
   return `SELECT 
                         request_number,SOURCE_HEADER_NUMBER ORDER_NUMBER,
-                        SOURCE_LINE_NUMBER SO_LINE,SOURCE_LINE_ID,mv.inventory_item_id,
+                        SOURCE_LINE_NUMBER SO_LINE,SOURCE_LINE_ID,mv.inventory_item_id,SOURCE_LINE_ID,
                         XXMB_UTILITY_PKG.ITEM_NUMBER (mv.inventory_item_id,mv.organization_id) ITEM,
                         XXMB_UTILITY_PKG.ITEM_DESC (mv.inventory_item_id,mv.organization_id) DESCRIPTION,
                         XXMB_UTILITY_PKG.ITEM_SERIAL (mv.inventory_item_id,mv.organization_id) ITEM_TYPE,
