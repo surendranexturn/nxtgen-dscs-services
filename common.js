@@ -31,7 +31,7 @@ function TransObjKeysToCamelCase(obj) {
         letter.toUpperCase()
       );
 
-      if (typeof obj[key] === "object" && obj[key].toISOString) {
+      if (typeof obj[key] === "object" && obj[key] && obj[key].toISOString) {
         // If the value is a Date object, convert it to an ISO string
         camelCasedObj[camelCaseKey] = obj[key].toISOString();
       } else {

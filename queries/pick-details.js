@@ -54,8 +54,8 @@ const PalleteLOV = (inventoryOrgCode, palletVal) => {
   SELECT MEANING PALLET,ATTRIBUTE2 SUBINVENTORY_CODE
            FROM FND_LOOKUP_VALUES
           WHERE LOOKUP_TYPE = 'AMZ_STOCK_LOCATORS'
-            AND ATTRIBUTE1 = ${inventoryOrgCode}
-            AND MEANING =  NVL(${palletVal},MEANING)`;
+            AND ATTRIBUTE1 = '${inventoryOrgCode}'
+            AND MEANING =  NVL('${palletVal}',MEANING)`;
 };
 
 /**
@@ -70,19 +70,19 @@ const CageLOV = (inventoryOrgCode, palletVal, cageVal) => {
   return `SELECT DESCRIPTION CAGE
   FROM FND_LOOKUP_VALUES
  WHERE LOOKUP_TYPE = 'AMZ_STOCK_LOCATORS'
-   AND ATTRIBUTE1 = ${inventoryOrgCode}
-   AND DESCRIPTION = NVL(${palletVal},DESCRIPTION)
-   AND MEANING = NVL(${cageVal},MEANING)`;
+   AND ATTRIBUTE1 = '${inventoryOrgCode}'
+   AND DESCRIPTION = NVL('${palletVal}',DESCRIPTION)
+   AND MEANING = NVL('${cageVal}',MEANING)`;
 };
 
 const ToteLOV = (inventoryOrgCode, palletVal, cageVal, toteVal) => {
   return ` SELECT TAG TOTE
   FROM FND_LOOKUP_VALUES
  WHERE LOOKUP_TYPE = 'AMZ_STOCK_LOCATORS'
-   AND ATTRIBUTE1 = ${inventoryOrgCode}
-   AND MEANING = NVL(${palletVal},MEANING)
-   AND DESCRIPTION = NVL(${cageVal},DESCRIPTION)
-   and TAG = NVL(${toteVal},TAG)`;
+   AND ATTRIBUTE1 = '${inventoryOrgCode}'
+   AND MEANING = NVL('${palletVal}',MEANING)
+   AND DESCRIPTION = NVL('${cageVal}',DESCRIPTION)
+   and TAG = NVL('${toteVal}',TAG)`;
 };
 
 const GetLinesCountBasedOnSO = (inventoryOrgId, soNumber) => {
