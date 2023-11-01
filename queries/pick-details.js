@@ -85,6 +85,17 @@ const ToteLOV = (inventoryOrgCode, palletVal, cageVal, toteVal) => {
    and TAG = NVL('${toteVal}',TAG)`;
 };
 
+const PickupLookupPalletCageTote = (inventoryOrgCode, palletVal, cageVal, toteVal) => {
+      return ` SELECT DESCRIPTION CAGE, TAG TOTE, MEANING PALLET,ATTRIBUTE2 SUBINVENTORY_CODE
+  FROM FND_LOOKUP_VALUES
+ WHERE LOOKUP_TYPE = 'AMZ_STOCK_LOCATORS'
+   AND ATTRIBUTE1 = '${inventoryOrgCode}'
+   ${palletVal ? `AND MEANING = NVL('${palletVal}',MEANING)` : ``}
+   ${cageVal ? `AND DESCRIPTION = NVL('${cageVal}',DESCRIPTION)` : ``}
+   ${toteVal ? `and TAG = NVL('${toteVal}',TAG)` : ``}`;
+};
+
+
 const GetLinesCountBasedOnSO = (inventoryOrgId, soNumber) => {
   return `select count(SOURCE_Line_NUMBER) Lines,sum(REQUESTED_QUANTITY) UNITS
     from   WSH_DELIVERABLES_V    where SOURCE_HEADER_NUMBER = ${soNumber} and organization_id = ${inventoryOrgId}`;
@@ -166,5 +177,6 @@ module.exports = {
   ToteLOV,
   GetLinesCountBasedOnSO,
   GetSoLinesDetails,
-  UpdateAutoPopulateFullPickQty
+  UpdateAutoPopulateFullPickQty,
+  PickupLookupPalletCageTote
 };
