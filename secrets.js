@@ -13,7 +13,7 @@ async function getSecret(secretName) {
   try {
 
     let dbConObj;
-    let isLocal = true;
+    let isLocal = false;
 
     if (!isLocal) {
       const response = await axios.get(url, { headers });
