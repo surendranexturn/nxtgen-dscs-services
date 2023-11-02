@@ -1,5 +1,5 @@
 const List = (inventoryOrgId) => {
-    return `
+  return `
     SELECT DELIVERY_ID,
                   PROMISE_DATE,
                   ORDER_NUMBER,
@@ -75,37 +75,37 @@ const List = (inventoryOrgId) => {
                   AND FLV.ENABLED_FLAG = 'Y'
                   AND FLV.MEANING = 'ALL'))  
                 ORDER BY SEQ,ROW_NUM
-    `
+    `;
 };
 
 const Dashboard = (inventoryOrgId) => {
-    return `SELECT (SELECT COUNT(DISTINCT DELIVERY_ID) TOTAL FROM WSH_DELIVERABLES_V WDV WHERE WDV.SOURCE_CODE = 'OE' AND WDV.CONTAINER_FLAG = 'N' AND WDV.RELEASED_STATUS = 'Y' AND WDV.ORGANIZATION_ID = ${inventoryOrgId}) TOTAL, (SELECT COUNT(DISTINCT DELIVERY_ID) TOTAL FROM WSH_DELIVERABLES_V WDV WHERE WDV.SOURCE_CODE = 'OE' AND WDV.PARENT_CONTAINER_INSTANCE_ID IS NOT NULL AND WDV.CONTAINER_FLAG = 'N' AND WDV.RELEASED_STATUS = 'Y' AND WDV.ORGANIZATION_ID = ${inventoryOrgId}) IN_PROCESS, (SELECT COUNT(DISTINCT WDV.DELIVERY_ID) FROM WSH_DELIVERABLES_V WDV WHERE WDV.SOURCE_CODE = 'OE' AND WDV.PARENT_CONTAINER_INSTANCE_ID IS NULL AND WDV.CONTAINER_FLAG = 'N' AND WDV.RELEASED_STATUS = 'Y' AND WDV.ORGANIZATION_ID = ${inventoryOrgId} AND WDV.DELIVERY_ID NOT IN (SELECT DISTINCT WDV.DELIVERY_ID FROM WSH_DELIVERABLES_V WDV WHERE WDV.SOURCE_CODE = 'OE' AND WDV.PARENT_CONTAINER_INSTANCE_ID IS NOT NULL AND WDV.CONTAINER_FLAG = 'N' AND WDV.RELEASED_STATUS = 'Y' AND WDV.ORGANIZATION_ID = ${inventoryOrgId})) READY_FOR_PACK FROM DUAL`
+  return `SELECT (SELECT COUNT(DISTINCT DELIVERY_ID) TOTAL FROM WSH_DELIVERABLES_V WDV WHERE WDV.SOURCE_CODE = 'OE' AND WDV.CONTAINER_FLAG = 'N' AND WDV.RELEASED_STATUS = 'Y' AND WDV.ORGANIZATION_ID = ${inventoryOrgId}) TOTAL, (SELECT COUNT(DISTINCT DELIVERY_ID) TOTAL FROM WSH_DELIVERABLES_V WDV WHERE WDV.SOURCE_CODE = 'OE' AND WDV.PARENT_CONTAINER_INSTANCE_ID IS NOT NULL AND WDV.CONTAINER_FLAG = 'N' AND WDV.RELEASED_STATUS = 'Y' AND WDV.ORGANIZATION_ID = ${inventoryOrgId}) IN_PROCESS, (SELECT COUNT(DISTINCT WDV.DELIVERY_ID) FROM WSH_DELIVERABLES_V WDV WHERE WDV.SOURCE_CODE = 'OE' AND WDV.PARENT_CONTAINER_INSTANCE_ID IS NULL AND WDV.CONTAINER_FLAG = 'N' AND WDV.RELEASED_STATUS = 'Y' AND WDV.ORGANIZATION_ID = ${inventoryOrgId} AND WDV.DELIVERY_ID NOT IN (SELECT DISTINCT WDV.DELIVERY_ID FROM WSH_DELIVERABLES_V WDV WHERE WDV.SOURCE_CODE = 'OE' AND WDV.PARENT_CONTAINER_INSTANCE_ID IS NOT NULL AND WDV.CONTAINER_FLAG = 'N' AND WDV.RELEASED_STATUS = 'Y' AND WDV.ORGANIZATION_ID = ${inventoryOrgId})) READY_FOR_PACK FROM DUAL`;
 };
 
 const SearchBySONumber = () => {
-    return `
+  return `
     SELECT DISTINCT WDV.SOURCE_HEADER_NUMBER AS ORDER_NUMBER
     FROM WSH_DELIVERABLES_V WDV
     WHERE CONTAINER_FLAG = 'N'
       AND SOURCE_CODE = 'OE'
       AND WDV.RELEASED_STATUS = 'Y' 
       AND WDV.SOURCE_HEADER_NUMBER LIKE '%' || :sonumber || '%'
-      AND WDV.ORGANIZATION_ID = :inventoryOrgId`
+      AND WDV.ORGANIZATION_ID = :inventoryOrgId`;
 };
 
 const SearchByDeliveryId = () => {
-    return `
+  return `
     SELECT DISTINCT WDV.DELIVERY_ID AS DELIVERY
     FROM WSH_DELIVERABLES_V WDV
     WHERE CONTAINER_FLAG = 'N'
       AND SOURCE_CODE = 'OE'
       AND WDV.RELEASED_STATUS = 'Y'
       AND WDV.DELIVERY_ID LIKE '%' || :deliveryId || '%'
-      AND WDV.ORGANIZATION_ID = :inventoryOrgId`
+      AND WDV.ORGANIZATION_ID = :inventoryOrgId`;
 };
 
 const SearchByDestinationLocator = () => {
-    return `SELECT DISTINCT MIL.SEGMENT1||'.'||MIL.SEGMENT2||'.'||MIL.SEGMENT3||'.0.0.0.0.0.0.0' DESTINATION_LOCATOR
+  return `SELECT DISTINCT MIL.SEGMENT1||'.'||MIL.SEGMENT2||'.'||MIL.SEGMENT3||'.0.0.0.0.0.0.0' DESTINATION_LOCATOR
     FROM MTL_ITEM_LOCATIONS MIL
     WHERE ORGANIZATION_ID = :inventoryOrgId
       AND MIL.INVENTORY_ITEM_ID IN
@@ -115,24 +115,24 @@ const SearchByDestinationLocator = () => {
            AND WDV.SOURCE_CODE = 'OE'
            AND WDV.RELEASED_STATUS = 'Y'
            AND MIL.SEGMENT1||MIL.SEGMENT2||MIL.SEGMENT3 like NVL('%'|| :srchSegment || '%',MIL.SEGMENT1||MIL.SEGMENT2||MIL.SEGMENT3)
-           AND WDV.ORGANIZATION_ID = :inventoryOrgId)`
+           AND WDV.ORGANIZATION_ID = :inventoryOrgId)`;
 };
 
 const Search = (sonumber, deliveryId, srchSegment, inventoryOrgId) => {
-    let append;
-    if (sonumber != "") {
-        append = `AND WDV.SOURCE_HEADER_NUMBER LIKE NVL('%'|| ${sonumber} || '%',WDV.SOURCE_HEADER_NUMBER)`;
-    } else if (deliveryId != "") {
-        append = `AND WDV.DELIVERY_ID LIKE NVL('%'|| ${deliveryId} || '%',WDV.DELIVERY_ID)`;
-    } else if (srchSegment != "") {
-        srchSegment = srchSegment ? `'${srchSegment}'` : "";
-        append = `AND WDV.INVENTORY_ITEM_ID IN (SELECT INVENTORY_ITEM_ID FROM MTL_ITEM_LOCATIONS MIL
+  let append;
+  if (sonumber != "") {
+    append = `AND WDV.SOURCE_HEADER_NUMBER LIKE NVL('%'|| ${sonumber} || '%',WDV.SOURCE_HEADER_NUMBER)`;
+  } else if (deliveryId != "") {
+    append = `AND WDV.DELIVERY_ID LIKE NVL('%'|| ${deliveryId} || '%',WDV.DELIVERY_ID)`;
+  } else if (srchSegment != "") {
+    srchSegment = srchSegment ? `'${srchSegment}'` : "";
+    append = `AND WDV.INVENTORY_ITEM_ID IN (SELECT INVENTORY_ITEM_ID FROM MTL_ITEM_LOCATIONS MIL
                                             WHERE ORGANIZATION_ID = ${inventoryOrgId}
                                                AND MIL.INVENTORY_ITEM_ID = WDV.INVENTORY_ITEM_ID
                                                AND MIL.SEGMENT1||MIL.SEGMENT2||MIL.SEGMENT3 like NVL('%'|| ${srchSegment} || '%',MIL.SEGMENT1||MIL.SEGMENT2||MIL.SEGMENT3))`;
-    }
+  }
 
-    return `SELECT DELIVERY_ID,
+  return `SELECT DELIVERY_ID,
                   PROMISE_DATE AS "Date",
                   ORDER_NUMBER,
                   SO_DISPLAY,
@@ -212,7 +212,7 @@ const Search = (sonumber, deliveryId, srchSegment, inventoryOrgId) => {
 };
 
 const Filter = (inventoryOrgId, inporcess, packing) => {
-    return `SELECT DELIVERY_ID,
+  return `SELECT DELIVERY_ID,
     PROMISE_DATE AS "Date",
     ORDER_NUMBER,
     SO_DISPLAY,
@@ -292,7 +292,7 @@ const Filter = (inventoryOrgId, inporcess, packing) => {
 };
 
 const Detail = (inventoryOrgId, deliveryId) => {
-    return `
+  return `
     SELECT 'DEL#'||WDV.DELIVERY_ID DELIVERY_NUMBER,
            HZP.PARTY_NAME,
            MIN(WDV.LATEST_PICKUP_DATE) OVER (ORDER BY NVL(WDV.LATEST_PICKUP_DATE,WDV.DATE_REQUESTED)) PROMISE_DATE,
@@ -325,15 +325,49 @@ const Detail = (inventoryOrgId, deliveryId) => {
        AND WDV.ORGANIZATION_ID = MSIB.ORGANIZATION_ID
        AND WDV.DELIVERY_ID = ${deliveryId}
      `;
-}
+};
+
+/**
+ *
+ * @returns gives the LPN number or error message
+ */
+const GenerateLPN = () => {
+  return `BEGIN 
+  XXMB_GENERATE_LPN_PROC(:p_organization_id, :p_container_item, :p_lpn_number, :p_error); 
+  COMMIT; 
+END;`;
+};
+
+/**
+ *
+ * @param {*} inventoryOrgId
+ * @returns  List of containers based on the Organization Id
+ */
+const ContainerList = (inventoryOrgId) => {
+  return `SELECT
+            DIMENSION_UOM_CODE,
+            UNIT_LENGTH,
+            UNIT_WIDTH,
+            UNIT_HEIGHT,
+            SEGMENT1,
+            INVENTORY_ITEM_ID,
+            DESCRIPTION
+          FROM
+            MTL_SYSTEM_ITEMS_B
+          WHERE
+                ORGANIZATION_ID = ${inventoryOrgId}
+            AND ITEM_TYPE = 'CONTAINER'`;
+};
 
 module.exports = {
-    List,
-    Dashboard,
-    SearchBySONumber,
-    SearchByDeliveryId,
-    SearchByDestinationLocator,
-    Search,
-    Filter,
-    Detail
-}
+  List,
+  Dashboard,
+  SearchBySONumber,
+  SearchByDeliveryId,
+  SearchByDestinationLocator,
+  Search,
+  Filter,
+  Detail,
+  GenerateLPN,
+  ContainerList,
+};

@@ -1,12 +1,13 @@
 const { transformArrayToKey } = require("./conversion");
 const Db = require("./db");
-const PackQueries = require('./queries/pack');
+const PackQueries = require("./queries/pack");
 const Utils = require("./utils");
+const oracledb = require("oracledb");
 
 /**
  * Show the count of the pack dashboard query
  * @param {*} inventoryOrgId
- * @returns 
+ * @returns
  */
 async function Dashboard(inventoryOrgId, source = Utils.DB_SOURCES.EBS) {
   try {
@@ -43,9 +44,17 @@ async function List(inventoryOrgId, source = Utils.DB_SOURCES.EBS) {
  * @param {*} sonumber
  * returns as sql query
  */
-async function SearchBySONumber(sonumber, inventoryOrgId, source = Utils.DB_SOURCES.EBS) {
+async function SearchBySONumber(
+  sonumber,
+  inventoryOrgId,
+  source = Utils.DB_SOURCES.EBS
+) {
   try {
-    const result = await Db.ExecuteSqlQuery(source, PackQueries.SearchBySONumber(), { sonumber, inventoryOrgId });
+    const result = await Db.ExecuteSqlQuery(
+      source,
+      PackQueries.SearchBySONumber(),
+      { sonumber, inventoryOrgId }
+    );
     return transformArrayToKey(result);
   } catch (error) {
     console.error("Error:", error);
@@ -63,9 +72,17 @@ async function SearchBySONumber(sonumber, inventoryOrgId, source = Utils.DB_SOUR
  * @param {*} inventoryOrgId
  * @returns sql query
  */
-async function SearchByDeliveryId(deliveryId, inventoryOrgId, source = Utils.DB_SOURCES.EBS) {
+async function SearchByDeliveryId(
+  deliveryId,
+  inventoryOrgId,
+  source = Utils.DB_SOURCES.EBS
+) {
   try {
-    const result = await Db.ExecuteSqlQuery(source, PackQueries.SearchByDeliveryId(), { deliveryId, inventoryOrgId });
+    const result = await Db.ExecuteSqlQuery(
+      source,
+      PackQueries.SearchByDeliveryId(),
+      { deliveryId, inventoryOrgId }
+    );
     return transformArrayToKey(result);
   } catch (error) {
     console.error("Error:", error);
@@ -82,9 +99,17 @@ async function SearchByDeliveryId(deliveryId, inventoryOrgId, source = Utils.DB_
  * @param {*} inventoryOrgId
  * @returns sql query
  */
-async function SearchByDestinationLocator(srchSegment, inventoryOrgId, source = Utils.DB_SOURCES.EBS) {
+async function SearchByDestinationLocator(
+  srchSegment,
+  inventoryOrgId,
+  source = Utils.DB_SOURCES.EBS
+) {
   try {
-    const result = await Db.ExecuteSqlQuery(source, PackQueries.SearchByDestinationLocator(), { inventoryOrgId, srchSegment });
+    const result = await Db.ExecuteSqlQuery(
+      source,
+      PackQueries.SearchByDestinationLocator(),
+      { inventoryOrgId, srchSegment }
+    );
     return transformArrayToKey(result);
   } catch (error) {
     console.error("Error:", error);
@@ -103,9 +128,18 @@ async function SearchByDestinationLocator(srchSegment, inventoryOrgId, source = 
  * @param {*} inventoryOrgId
  * @returns  sql Query
  */
-async function Search(deliveryId, sonumber, srchSegment, inventoryOrgId, source = Utils.DB_SOURCES.EBS) {
+async function Search(
+  deliveryId,
+  sonumber,
+  srchSegment,
+  inventoryOrgId,
+  source = Utils.DB_SOURCES.EBS
+) {
   try {
-    return Db.ExecuteSqlQuery(source, PackQueries.Search(sonumber, deliveryId, srchSegment, inventoryOrgId));
+    return Db.ExecuteSqlQuery(
+      source,
+      PackQueries.Search(sonumber, deliveryId, srchSegment, inventoryOrgId)
+    );
   } catch (error) {
     console.error("Error:", error);
     return {
@@ -122,9 +156,17 @@ async function Search(deliveryId, sonumber, srchSegment, inventoryOrgId, source 
  * @param {*} inventoryOrgId
  * @returns  sql query
  */
-async function Filter(inporcess, packing, inventoryOrgId, source = Utils.DB_SOURCES.EBS) {
+async function Filter(
+  inporcess,
+  packing,
+  inventoryOrgId,
+  source = Utils.DB_SOURCES.EBS
+) {
   try {
-    return Db.ExecuteSqlQuery(source, PackQueries.Filter(inventoryOrgId, inporcess, packing));
+    return Db.ExecuteSqlQuery(
+      source,
+      PackQueries.Filter(inventoryOrgId, inporcess, packing)
+    );
   } catch (error) {
     console.error("Error:", error);
     return {
@@ -141,9 +183,75 @@ async function Filter(inporcess, packing, inventoryOrgId, source = Utils.DB_SOUR
  * @param {*} dbConfig
  * @returns
  */
-async function Detail(deliveryId, inventoryOrgId, source = Utils.DB_SOURCES.EBS) {
+async function Detail(
+  deliveryId,
+  inventoryOrgId,
+  source = Utils.DB_SOURCES.EBS
+) {
   try {
-    return Db.ExecuteSqlQuery(source, PackQueries.Detail(inventoryOrgId, deliveryId));
+    return Db.ExecuteSqlQuery(
+      source,
+      PackQueries.Detail(inventoryOrgId, deliveryId)
+    );
+  } catch (error) {
+    console.error("Error:", error);
+    return {
+      statusCode: 500,
+      body: JSON.stringify({ error: "Database error" + error }),
+    };
+  }
+}
+
+/**
+ *
+ * @param {*} inventoryOrgId
+ * @param {*} containerItemId
+ * @param {*} source
+ * @returns LPN Number and Error message
+ */
+async function CreateLPN(
+  inventoryOrgId,
+  containerItemId,
+  source = Utils.DB_SOURCES.EBS
+) {
+  try {
+    const params = {
+      p_organization_id: inventoryOrgId, // Replace with your actual input value
+      p_container_item: containerItemId, // Replace with your actual input value
+      p_lpn_number: {
+        dir: oracledb.BIND_OUT,
+        type: oracledb.STRING,
+        maxSize: 100,
+      },
+      p_error: { dir: oracledb.BIND_OUT, type: oracledb.STRING, maxSize: 600 },
+    };
+    const result = await Db.ExecuteSqlQuery(
+      source,
+      PackQueries.GenerateLPN(),
+      params,
+      true
+    );
+    return result;
+  } catch (error) {
+    return {
+      statusCode: 500,
+      body: JSON.stringify({ error: "Database error" + error }),
+    };
+  }
+}
+
+/**
+ *
+ * @param {*} inventoryOrgId
+ * @param {*} source
+ * @returns List of containers which was added to the system
+ */
+async function ContainerList(inventoryOrgId, source = Utils.DB_SOURCES.EBS) {
+  try {
+    return Db.ExecuteSqlQuery(
+      source,
+      PackQueries.ContainerList(inventoryOrgId)
+    );
   } catch (error) {
     console.error("Error:", error);
     return {
@@ -162,5 +270,7 @@ const Pack = {
   SearchByDestinationLocator,
   Filter,
   Detail,
+  CreateLPN,
+  ContainerList,
 };
 module.exports = Pack;
