@@ -225,6 +225,36 @@ async function ToteLOV(
 }
 
 /**
+ * Lookup for Pallet, Cage & Tote
+ * @param {*} inventoryOrgId
+ * @param {*} palletVal
+ * @param {*} cageVal
+ * @param {*} toteVal
+ * @param {*} source
+ * @returns
+ */
+async function PickupLookupPalletCageTote(
+  inventoryOrgCode,
+  palletVal,
+  cageVal,
+  toteVal,
+  source = Utils.DB_SOURCES.EBS
+) {
+  try {
+    return Db.ExecuteSqlQuery(
+      source,
+      PickDetailsQueries.PickupLookupPalletCageTote(inventoryOrgCode, palletVal, cageVal, toteVal)
+    );
+  } catch (error) {
+    console.error("Error:", error);
+    return {
+      statusCode: 500,
+      body: JSON.stringify({ error: "Database error" + error }),
+    };
+  }
+}
+
+/**
  *
  * @param {*} inventoryOrgId
  * @param {*} soNumber
@@ -315,6 +345,7 @@ const PickDetails = {
   ToteLOV,
   GetLinesCountBasedOnSO,
   GetSoLinesDetails,
-  UpdateAutoPopulateFullPickQty
+  UpdateAutoPopulateFullPickQty,
+  PickupLookupPalletCageTote
 };
 module.exports = PickDetails;
