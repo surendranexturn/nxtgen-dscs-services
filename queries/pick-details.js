@@ -5,7 +5,7 @@
  * @returns subinventory code, source location
  */
 const SourceSubInventoryDetails = (inventoryOrgId, soLineId) => {
-  return `SELECT  SUBINVENTORY_CODE sub_inventory,(SELECT    segment1
+      return `SELECT  SUBINVENTORY_CODE sub_inventory,(SELECT    segment1
                 || '.'
                 || segment2
                 || '.'
@@ -37,7 +37,7 @@ const SourceSubInventoryDetails = (inventoryOrgId, soLineId) => {
  * @returns
  */
 const DestinationSubInventoryDetails = (inventoryOrgId) => {
-  return `SELECT SECONDARY_INVENTORY_NAME sub_inventory
+      return `SELECT SECONDARY_INVENTORY_NAME sub_inventory
       FROM MTL_SECONDARY_INVENTORIES
      WHERE ORGANIZATION_ID = ${inventoryOrgId}`;
 };
@@ -50,7 +50,7 @@ const DestinationSubInventoryDetails = (inventoryOrgId) => {
  * @returns List of Pallets available or searched Pallet Value
  */
 const PalleteLOV = (inventoryOrgCode, palletVal) => {
-  return `
+      return `
   SELECT MEANING PALLET,ATTRIBUTE2 SUBINVENTORY_CODE
            FROM FND_LOOKUP_VALUES
           WHERE LOOKUP_TYPE = 'AMZ_STOCK_LOCATORS'
@@ -67,7 +67,7 @@ const PalleteLOV = (inventoryOrgCode, palletVal) => {
  * @returns Cage List available or searched cage value
  */
 const CageLOV = (inventoryOrgCode, palletVal, cageVal) => {
-  return `SELECT DESCRIPTION CAGE
+      return `SELECT DESCRIPTION CAGE
   FROM FND_LOOKUP_VALUES
  WHERE LOOKUP_TYPE = 'AMZ_STOCK_LOCATORS'
    AND ATTRIBUTE1 = '${inventoryOrgCode}'
@@ -76,7 +76,7 @@ const CageLOV = (inventoryOrgCode, palletVal, cageVal) => {
 };
 
 const ToteLOV = (inventoryOrgCode, palletVal, cageVal, toteVal) => {
-  return ` SELECT TAG TOTE
+      return ` SELECT TAG TOTE
   FROM FND_LOOKUP_VALUES
  WHERE LOOKUP_TYPE = 'AMZ_STOCK_LOCATORS'
    AND ATTRIBUTE1 = '${inventoryOrgCode}'
@@ -97,7 +97,7 @@ const PickupLookupPalletCageTote = (inventoryOrgCode, palletVal, cageVal, toteVa
 
 
 const GetLinesCountBasedOnSO = (inventoryOrgId, soNumber) => {
-  return `select count(SOURCE_Line_NUMBER) Lines,sum(REQUESTED_QUANTITY) UNITS
+      return `select count(SOURCE_Line_NUMBER) Lines,sum(REQUESTED_QUANTITY) UNITS
     from   WSH_DELIVERABLES_V    where SOURCE_HEADER_NUMBER = ${soNumber} and organization_id = ${inventoryOrgId}`;
 };
 
@@ -108,7 +108,7 @@ const GetLinesCountBasedOnSO = (inventoryOrgId, soNumber) => {
  * @returns
  */
 const GetSoLinesDetails = (inventoryOrgId, soNumber) => {
-  return `SELECT  request_number,SOURCE_HEADER_NUMBER ORDER_NUMBER,
+      return `SELECT  request_number,SOURCE_HEADER_NUMBER ORDER_NUMBER,
                 SOURCE_LINE_NUMBER SO_LINE,SOURCE_LINE_ID,mv.inventory_item_id,
               XXMB_UTILITY_PKG.ITEM_NUMBER (mv.inventory_item_id,mv.organization_id) ITEM,
               XXMB_UTILITY_PKG.ITEM_DESC (mv.inventory_item_id,mv.organization_id) DESCRIPTION,
@@ -135,7 +135,7 @@ const GetSoLinesDetails = (inventoryOrgId, soNumber) => {
  * @returns
  */
 const UpdateAutoPopulateFullPickQty = (inventoryOrgId, deliveryId) => {
-  return `
+      return `
   update
       mtl_material_transactions_temp
 set
@@ -167,16 +167,82 @@ where
                   )
       )
   `
+};
+
+const Search = (inventoryOrgId, deliveryId, itemDesc) => {
+      return `SELECT  
+      request_number,SOURCE_HEADER_NUMBER ORDER_NUMBER,
+      SOURCE_LINE_NUMBER SO_LINE,mv.inventory_item_id,
+      XXMB_UTILITY_PKG.ITEM_NUMBER (mv.inventory_item_id,mv.organization_id) ITEM,
+      XXMB_UTILITY_PKG.ITEM_DESC (mv.inventory_item_id,mv.organization_id) DESCRIPTION,
+        XXMB_UTILITY_PKG.ITEM_SERIAL (mv.inventory_item_id,mv.organization_id) ITEM_TYPE,
+    XX_DEMAND_TYPE_CATEGORY_FUNC('CATEGORY',WV.DELIVERY_ID,mv.ORGANIZATION_ID) ITEM_CATEGORY,
+      XXMB_UTILITY_PKG.ITEM_ONHAND(mv.inventory_item_id,mv.organization_id) ONHAND_QTY,
+      QUANTITY REQUESTED_QUANTITY, decode((quantity_delivered-quantity),NULL,0,(quantity-quantity_delivered)) Remaining_qty,UOM_CODE UOM   
+    FROM 
+      MTL_TXN_REQUEST_LINES_V mv,WSH_DELIVERABLES_V wv
+  WHERE 
+      mv.organization_id = wv.organization_id
+  AND TXN_SOURCE_LINE_DETAIL_ID = DELIVERY_LINE_ID
+  AND mv.organization_id = ${inventoryOrgId}
+  AND wv.delivery_id = ${deliveryId}
+  AND upper(XXMB_UTILITY_PKG.ITEM_DESC (mv.inventory_item_id,mv.organization_id)) like '%${itemDesc}%'
+  AND -1 = -1
+  AND (mv.move_order_type = 3 AND mv.line_status IN (3, 7, 9))
+  ORDER BY REQUEST_NUMBER, MOVE_ORDER_TYPE_NAME, LINE_NUMBER`
+};
+
+const DeliveryDetails = (deliveryId, inventoryOrgId) => {
+      return `SELECT 
+                            request_number,SOURCE_HEADER_NUMBER ORDER_NUMBER,
+                            SOURCE_LINE_NUMBER SO_LINE,SOURCE_LINE_ID,mv.inventory_item_id,SOURCE_LINE_ID,
+                            XXMB_UTILITY_PKG.ITEM_NUMBER (mv.inventory_item_id,mv.organization_id) ITEM,
+                            XXMB_UTILITY_PKG.ITEM_DESC (mv.inventory_item_id,mv.organization_id) DESCRIPTION,
+                            XXMB_UTILITY_PKG.ITEM_SERIAL (mv.inventory_item_id,mv.organization_id) ITEM_TYPE,
+                            XX_DEMAND_TYPE_CATEGORY_FUNC('CATEGORY',WV.DELIVERY_ID,mv.ORGANIZATION_ID) ITEM_CATEGORY,
+                            XXMB_UTILITY_PKG.ITEM_ONHAND(mv.inventory_item_id,mv.organization_id) ONHAND_QTY,
+                            QUANTITY REQUESTED_QUANTITY, decode((quantity_delivered-quantity),NULL,0,(quantity-quantity_delivered)) Remaining_qty
+                            ,UOM_CODE UOM   
+                        FROM 
+                            MTL_TXN_REQUEST_LINES_V mv,WSH_DELIVERABLES_V wv
+                        WHERE     mv.organization_id = wv.organization_id
+                        AND TXN_SOURCE_LINE_DETAIL_ID = DELIVERY_LINE_ID
+                        AND mv.organization_id = ${inventoryOrgId}
+                        AND wv.delivery_id = ${deliveryId}
+                        AND -1 = -1
+                        AND (mv.move_order_type = 3 AND mv.line_status IN (3, 7, 9))
+                        ORDER BY REQUEST_NUMBER, MOVE_ORDER_TYPE_NAME, LINE_NUMBER`;
+};
+
+const CountBasedonDeliveryId = (deliveryId, inventoryOrgId) => {
+      return `select 
+        count(SOURCE_Line_NUMBER) Lines, 
+        sum(REQUESTED_QUANTITY) UNITS, 
+        decode(
+          min(LATEST_PICKUP_DATE), 
+          NULL, 
+          min(Date_requested), 
+          min(LATEST_PICKUP_DATE)
+        ) promise_date 
+      from 
+        WSH_DELIVERABLES_V 
+      where 
+        delivery_id = ${deliveryId}
+        and organization_id = ${inventoryOrgId}
+      `;
 }
 
 module.exports = {
-  SourceSubInventoryDetails,
-  DestinationSubInventoryDetails,
-  PalleteLOV,
-  CageLOV,
-  ToteLOV,
-  GetLinesCountBasedOnSO,
-  GetSoLinesDetails,
-  UpdateAutoPopulateFullPickQty,
-  PickupLookupPalletCageTote
+      Search,
+      DeliveryDetails,
+      CountBasedonDeliveryId,
+      SourceSubInventoryDetails,
+      DestinationSubInventoryDetails,
+      PalleteLOV,
+      CageLOV,
+      ToteLOV,
+      GetLinesCountBasedOnSO,
+      GetSoLinesDetails,
+      UpdateAutoPopulateFullPickQty,
+      PickupLookupPalletCageTote
 };
