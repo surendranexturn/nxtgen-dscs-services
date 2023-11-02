@@ -19,7 +19,8 @@ async function CountBasedonDeliveryId(deliveryId, inventoryOrgId, source = Utils
       statusCode: 500,
       body: JSON.stringify({ error: "Database error" + error }),
     };
-  }}
+  }
+}
 
 /**
  * Author: surendra
@@ -303,7 +304,25 @@ async function UpdateAutoPopulateFullPickQty(
       body: JSON.stringify({ error: "Database error" + error }),
     };
   }
-}
+};
+
+/**
+ *
+ * @param {*} inventoryOrgId
+ * @param {*} deliveryId
+ * @returns
+ */
+async function UpdateLockDeliveryQuery(deliveryId, username, source = Utils.DB_SOURCES.EBS) {
+  try {
+    return Db.ExecuteSqlQuery(source, PickDetailsQueries.UpdateLockDeliveryQuery(deliveryId, username), [username, username, deliveryId], true);
+  } catch (error) {
+    console.error("Error:", error);
+    return {
+      statusCode: 500,
+      body: JSON.stringify({ error: "Database error" + error }),
+    };
+  }
+};
 
 
 const PickDetails = {
@@ -318,6 +337,7 @@ const PickDetails = {
   GetLinesCountBasedOnSO,
   GetSoLinesDetails,
   UpdateAutoPopulateFullPickQty,
-  PickupLookupPalletCageTote
+  PickupLookupPalletCageTote,
+  UpdateLockDeliveryQuery
 };
 module.exports = PickDetails;

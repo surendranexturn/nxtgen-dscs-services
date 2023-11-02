@@ -230,6 +230,15 @@ const CountBasedonDeliveryId = (deliveryId, inventoryOrgId) => {
         delivery_id = ${deliveryId}
         and organization_id = ${inventoryOrgId}
       `;
+};
+
+const UpdateLockDeliveryQuery = () => {
+      return `UPDATE WSH_NEW_DELIVERIES
+      SET ATTRIBUTE11 = upper(:username), --FND_USER Table USER_NAME Column Name    
+      LAST_UPDATE_DATE = SYSDATE, --System Date    
+      LAST_UPDATED_BY = (SELECT USER_ID FROM FND_USER WHERE USER_NAME = upper(:username)) --FND_USER Table USER_ID Column Name    
+      WHERE DELIVERY_ID = :deliveryId    
+      AND ATTRIBUTE11 is NULL`
 }
 
 module.exports = {
@@ -244,5 +253,6 @@ module.exports = {
       GetLinesCountBasedOnSO,
       GetSoLinesDetails,
       UpdateAutoPopulateFullPickQty,
-      PickupLookupPalletCageTote
+      PickupLookupPalletCageTote,
+      UpdateLockDeliveryQuery
 };
