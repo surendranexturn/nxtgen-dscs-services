@@ -202,6 +202,13 @@ async function Detail(
   }
 }
 
+/**
+ *
+ * @param {*} inventoryOrgId
+ * @param {*} containerItemId
+ * @param {*} source
+ * @returns LPN Number and Error message
+ */
 async function CreateLPN(
   inventoryOrgId,
   containerItemId,
@@ -232,6 +239,28 @@ async function CreateLPN(
     };
   }
 }
+
+/**
+ *
+ * @param {*} inventoryOrgId
+ * @param {*} source
+ * @returns List of containers which was added to the system
+ */
+async function ContainerList(inventoryOrgId, source = Utils.DB_SOURCES.EBS) {
+  try {
+    return Db.ExecuteSqlQuery(
+      source,
+      PackQueries.ContainerList(inventoryOrgId)
+    );
+  } catch (error) {
+    console.error("Error:", error);
+    return {
+      statusCode: 500,
+      body: JSON.stringify({ error: "Database error" + error }),
+    };
+  }
+}
+
 const Pack = {
   Dashboard,
   List,
@@ -242,5 +271,6 @@ const Pack = {
   Filter,
   Detail,
   CreateLPN,
+  ContainerList,
 };
 module.exports = Pack;

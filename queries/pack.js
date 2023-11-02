@@ -327,11 +327,36 @@ const Detail = (inventoryOrgId, deliveryId) => {
      `;
 };
 
+/**
+ *
+ * @returns gives the LPN number or error message
+ */
 const GenerateLPN = () => {
   return `BEGIN 
   XXMB_GENERATE_LPN_PROC(:p_organization_id, :p_container_item, :p_lpn_number, :p_error); 
   COMMIT; 
 END;`;
+};
+
+/**
+ *
+ * @param {*} inventoryOrgId
+ * @returns  List of containers based on the Organization Id
+ */
+const ContainerList = (inventoryOrgId) => {
+  return `SELECT
+            DIMENSION_UOM_CODE,
+            UNIT_LENGTH,
+            UNIT_WIDTH,
+            UNIT_HEIGHT,
+            SEGMENT1,
+            INVENTORY_ITEM_ID,
+            DESCRIPTION
+          FROM
+            MTL_SYSTEM_ITEMS_B
+          WHERE
+                ORGANIZATION_ID = ${inventoryOrgId}
+            AND ITEM_TYPE = 'CONTAINER'`;
 };
 
 module.exports = {
@@ -344,4 +369,5 @@ module.exports = {
   Filter,
   Detail,
   GenerateLPN,
+  ContainerList,
 };
