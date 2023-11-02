@@ -324,6 +324,23 @@ async function UpdateLockDeliveryQuery(deliveryId, username, source = Utils.DB_S
   }
 };
 
+/**
+ *
+ * @param {*} inventoryOrgId
+ * @param {*} deliveryId
+ * @returns
+ */
+async function ExceptionList(source = Utils.DB_SOURCES.EBS) {
+  try {
+    return Db.ExecuteSqlQuery(source, PickDetailsQueries.ExceptionList());
+  } catch (error) {
+    console.error("Error:", error);
+    return {
+      statusCode: 500,
+      body: JSON.stringify({ error: "Database error" + error }),
+    };
+  }
+};
 
 const PickDetails = {
   CountBasedonDeliveryId,
@@ -338,6 +355,7 @@ const PickDetails = {
   GetSoLinesDetails,
   UpdateAutoPopulateFullPickQty,
   PickupLookupPalletCageTote,
-  UpdateLockDeliveryQuery
+  UpdateLockDeliveryQuery,
+  ExceptionList
 };
 module.exports = PickDetails;

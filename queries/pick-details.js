@@ -239,6 +239,17 @@ const UpdateLockDeliveryQuery = () => {
       LAST_UPDATED_BY = (SELECT USER_ID FROM FND_USER WHERE USER_NAME = upper(:username)) --FND_USER Table USER_ID Column Name    
       WHERE DELIVERY_ID = :deliveryId    
       AND ATTRIBUTE11 is NULL`
+};
+
+const ExceptionList = () => {
+      return `SELECT LOOKUP_CODE SR_NO,
+           MEANING EXCEPTION_CODE,
+           DESCRIPTION EXCEPTION_DESCRIPTION
+      FROM FND_LOOKUP_VALUES
+      WHERE LOOKUP_TYPE = 'XXMB_WSH_BACK_ORDER_EXCEPTIONS'
+       AND ENABLED_FLAG = 'Y'
+      ORDER BY LOOKUP_CODE ASC
+      `
 }
 
 module.exports = {
@@ -254,5 +265,6 @@ module.exports = {
       GetSoLinesDetails,
       UpdateAutoPopulateFullPickQty,
       PickupLookupPalletCageTote,
-      UpdateLockDeliveryQuery
+      UpdateLockDeliveryQuery,
+      ExceptionList
 };
